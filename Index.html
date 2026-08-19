@@ -466,28 +466,14 @@
                 // Use update/insert rather than relying on an implicit
                 // ON CONFLICT configuration. session_id is the primary key
                 // in the supplied Supabase schema.
-                const { data: existing, error: lookupError } = await supabaseClient
+                // session_id must be PRIMARY KEY/UNIQUE in Supabase.
+                // Upsert avoids the select -> insert/update race that can happen
+                // when a user opens multiple tabs or reconnects quickly.
+                const { error: upsertError } = await supabaseClient
                     .from('jethro_live_presence')
-                    .select('session_id')
-                    .eq('session_id', row.session_id)
-                    .maybeSingle();
+                    .upsert(row, { onConflict: 'session_id' });
 
-                if (lookupError) throw lookupError;
-
-                let result;
-
-                if (existing) {
-                    result = await supabaseClient
-                        .from('jethro_live_presence')
-                        .update(row)
-                        .eq('session_id', row.session_id);
-                } else {
-                    result = await supabaseClient
-                        .from('jethro_live_presence')
-                        .insert(row);
-                }
-
-                if (result.error) throw result.error;
+                if (upsertError) throw upsertError;
 
                 // Keep one heartbeat timer per browser session.
                 if (!livePresenceTimer) {
@@ -551,6 +537,12 @@
             const cutoff = new Date(Date.now() - 40000).toISOString();
 
             try {
+                const statusBadge = document.getElementById('live-team-status');
+                if (statusBadge) {
+                    statusBadge.textContent = 'CONNECTING';
+                    statusBadge.className = 'text-[9px] font-bold text-amber-600 bg-amber-50 px-2 py-1 rounded-full';
+                }
+
                 const { data, error } = await supabaseClient
                     .from('jethro_live_presence')
                     .select('session_id,user_id,user_name,role,current_tab,current_action,last_seen')
@@ -560,8 +552,19 @@
                 if (error) throw error;
 
                 if (!data || data.length === 0) {
-                    box.innerHTML = '<p class="text-xs text-slate-500">No other users are active right now.</p>';
+                    box.innerHTML = '<p class="text-xs text-slate-500">No users are active right now.</p>';
+                    const statusBadge = document.getElementById('live-team-status');
+                    if (statusBadge) {
+                        statusBadge.textContent = 'LIVE';
+                        statusBadge.className = 'text-[9px] font-bold text-emerald-600 bg-emerald-50 px-2 py-1 rounded-full';
+                    }
                     return;
+                }
+
+                const statusBadge = document.getElementById('live-team-status');
+                if (statusBadge) {
+                    statusBadge.textContent = 'LIVE';
+                    statusBadge.className = 'text-[9px] font-bold text-emerald-600 bg-emerald-50 px-2 py-1 rounded-full';
                 }
 
                 box.innerHTML = data.map(user => {
@@ -593,12 +596,17 @@
                 }).join('');
             } catch (error) {
                 console.warn('Live team activity refresh failed:', error);
+                const statusBadge = document.getElementById('live-team-status');
+                if (statusBadge) {
+                    statusBadge.textContent = 'OFFLINE';
+                    statusBadge.className = 'text-[9px] font-bold text-red-600 bg-red-50 px-2 py-1 rounded-full';
+                }
 
                 // Preserve an already visible list during a transient failure.
                 // Only show a reconnecting message if there is nothing useful
                 // currently displayed.
                 if (!box.innerHTML.trim()) {
-                    box.innerHTML = '<p class="text-xs text-amber-600">Live monitor is reconnecting…</p>';
+                    box.innerHTML = '<p class="text-xs text-amber-600">Live monitor is reconnecting… Check that the Supabase live-presence table and policies are configured.</p>';
                 }
             }
         }
@@ -1122,7 +1130,7 @@ function exportDatabaseJSON() {
                     <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
                         <div class="flex items-center justify-between mb-3">
                             <div><p class="text-xs font-bold uppercase text-slate-400 tracking-wider"><i class="fa-solid fa-tower-broadcast text-emerald-500 mr-1"></i> Live Team Activity</p><p class="text-[10px] text-slate-400 mt-1">See what other logged-in users are doing in real time.</p></div>
-                            <span class="text-[9px] font-bold text-emerald-600 bg-emerald-50 px-2 py-1 rounded-full">LIVE</span>
+                            <span id="live-team-status" class="text-[9px] font-bold text-emerald-600 bg-emerald-50 px-2 py-1 rounded-full">LIVE</span>
                         </div>
                         <div id="live-team-activity"><p class="text-xs text-slate-500">Loading live activity...</p></div>
                     </div>` : ''}

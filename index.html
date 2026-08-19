@@ -1,0 +1,2921 @@
+<!DOCTYPE html>
+<html lang="en" class="h-full">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Jethro Akprizi Nig Ltd - Management System</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        brand: {
+                            50: '#f5f3ff',
+                            100: '#ede9fe',
+                            200: '#ddd6fe',
+                            500: '#8b5cf6',
+                            600: '#7c3aed',
+                            700: '#6d28d9',
+                            800: '#5b21b6',
+                            900: '#4c1d95',
+                        },
+                        skyaccent: {
+                            50: '#f0f9ff',
+                            100: '#e0f2fe',
+                            400: '#38bdf8',
+                            500: '#0ea5e9',
+                            600: '#0284c7',
+                            700: '#0369a1',
+                        }
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: #f1f1f1; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
+        ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+        @media print {
+            aside, header, .no-print { display: none !important; }
+            main { padding: 0 !important; background: white !important; }
+            .print-only { display: block !important; }
+        }
+    </style>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body class="h-full bg-slate-50 text-slate-800 antialiased flex flex-col">
+
+    <div id="app" class="h-full flex flex-col flex-1 overflow-hidden">
+        
+        <!-- Login Screen -->
+        <div id="login-view" class="fixed inset-0 z-50 bg-slate-900 flex items-center justify-center p-4 overflow-y-auto">
+            <div class="max-w-md w-full bg-white rounded-2xl shadow-2xl overflow-hidden p-6 sm:p-8 border-t-4 border-brand-600 my-auto">
+                <div class="text-center mb-6">
+                    <div class="inline-flex items-center justify-center w-16 h-16 bg-brand-100 text-brand-700 rounded-full mb-3 shadow-inner">
+                        <i class="fa-solid fa-water text-skyaccent-500 text-2xl"></i>
+                    </div>
+                    <h1 class="text-xl sm:text-2xl font-extrabold text-slate-900 tracking-tight">Jethro Akprizi Nig Ltd</h1>
+                    <p class="text-xs text-slate-500 mt-1">Production Business Management System</p>
+                </div>
+
+                <form id="login-form" onsubmit="handleLogin(event)" class="space-y-4">
+                    <div>
+                        <label class="block text-xs font-semibold uppercase text-slate-600 mb-1">Email or User ID</label>
+                        <input type="text" id="login-email" required class="w-full px-4 py-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-brand-500 focus:border-brand-500 outline-none text-sm transition" placeholder="e.g. manager@jethro.com">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold uppercase text-slate-600 mb-1">Password</label>
+                        <div class="relative">
+                            <input type="password" id="login-password" required class="w-full px-4 py-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-brand-500 focus:border-brand-500 outline-none text-sm transition" placeholder="••••••••">
+                            <button type="button" onclick="togglePasswordVisibility('login-password', this)" class="absolute right-3 top-3.5 text-slate-400 hover:text-slate-600">
+                                <i class="fa-solid fa-eye"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <div id="login-error" class="text-red-500 text-xs hidden font-medium bg-red-50 p-2.5 rounded-lg border border-red-200"></div>
+                    <button type="submit" class="w-full py-3 bg-brand-600 hover:bg-brand-700 text-white font-semibold rounded-xl shadow-md transition flex items-center justify-center gap-2 text-sm">
+                        <i class="fa-solid fa-right-to-bracket"></i> Login to System
+                    </button>
+                </form>
+
+                <div class="mt-6 text-center text-[11px] text-slate-400 border-t pt-4">
+                    &copy; 2026 Jethro Akprizi Nig Ltd. Persistent Enterprise Storage Active.
+                </div>
+            </div>
+        </div>
+
+        <!-- Main Application View -->
+        <div id="main-app" class="h-full flex overflow-hidden hidden relative">
+            
+            <!-- Mobile Sidebar Backdrop -->
+            <div id="sidebar-backdrop" onclick="toggleSidebarMobile()" class="fixed inset-0 bg-slate-900/50 z-10 md:hidden hidden"></div>
+
+            <!-- Sidebar Navigation -->
+            <aside id="sidebar" class="absolute md:relative inset-y-0 left-0 w-64 bg-slate-900 text-slate-300 flex flex-col transition-transform duration-300 transform -translate-x-full md:translate-x-0 z-20 flex-shrink-0 border-r border-slate-800">
+                <div class="p-4 border-b border-slate-800 flex items-center justify-between">
+                    <div class="flex items-center gap-3">
+                        <div class="w-10 h-10 rounded-xl bg-brand-600 text-white flex items-center justify-center font-bold text-lg shadow">
+                            <i class="fa-solid fa-water text-skyaccent-400"></i>
+                        </div>
+                        <div>
+                            <h2 class="font-bold text-white text-sm leading-tight">Jethro Akprizi</h2>
+                            <span id="sidebar-role-badge" class="inline-block px-1.5 py-0.5 rounded text-[10px] uppercase font-semibold bg-brand-800 text-brand-100 mt-0.5">Manager</span>
+                        </div>
+                    </div>
+                    <button onclick="toggleSidebarMobile()" class="md:hidden text-slate-400 hover:text-white p-1">
+                        <i class="fa-solid fa-xmark text-lg"></i>
+                    </button>
+                </div>
+
+                <nav id="sidebar-nav" class="flex-1 overflow-y-auto p-4 space-y-1.5 text-xs font-medium">
+                    <!-- Dynamically populated via JS -->
+                </nav>
+
+                <div class="p-4 border-t border-slate-800 bg-slate-950/50 flex items-center justify-between">
+                    <div class="flex items-center gap-2.5 truncate">
+                        <div class="w-8 h-8 rounded-full bg-brand-700 text-white flex items-center justify-center font-bold text-xs flex-shrink-0 shadow" id="user-avatar-initials">M</div>
+                        <div class="truncate">
+                            <p class="font-semibold text-white text-xs truncate" id="sidebar-username">Manager Admin</p>
+                            <p class="text-[10px] text-skyaccent-400 truncate" id="sidebar-email">manager@jethro.com</p>
+                        </div>
+                    </div>
+                    <button onclick="logout()" title="Logout" class="text-slate-400 hover:text-red-400 p-2 transition flex-shrink-0">
+                        <i class="fa-solid fa-power-off"></i>
+                    </button>
+                </div>
+            </aside>
+
+            <!-- Content Area -->
+            <div class="flex-1 flex flex-col overflow-hidden min-w-0">
+                <header class="bg-white border-b border-slate-200 h-16 flex items-center justify-between px-4 sm:px-6 z-10 shadow-sm flex-shrink-0">
+                    <div class="flex items-center gap-3 min-w-0">
+                        <button onclick="toggleSidebarMobile()" class="md:hidden text-slate-600 hover:text-slate-900 text-lg p-2">
+                            <i class="fa-solid fa-bars"></i>
+                        </button>
+                        <h1 id="page-title" class="text-base sm:text-lg font-bold text-slate-800 truncate">Dashboard Overview</h1>
+                    </div>
+                    <div class="flex items-center gap-2 sm:gap-3">
+                        <div class="hidden lg:flex items-center gap-2 bg-slate-100 px-3 py-1.5 rounded-full text-xs font-medium text-slate-700 border border-slate-200">
+                            <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                            System Live: <span id="current-date-display" class="font-semibold text-slate-800"></span>
+                        </div>
+                        <button onclick="openProfileModal()" class="flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-slate-200 hover:bg-slate-100 transition text-xs font-semibold text-slate-700 whitespace-nowrap shadow-sm">
+                            <i class="fa-solid fa-user-gear text-brand-600"></i> <span class="hidden sm:inline">Account & Profile Settings</span><span class="sm:hidden">Account</span>
+                        </button>
+                    </div>
+                </header>
+
+                <main id="main-content-area" class="flex-1 overflow-y-auto p-4 md:p-8 bg-slate-50">
+                    <!-- Dynamic views injected here -->
+                </main>
+            </div>
+        </div>
+
+        <!-- Generic Dynamic Modal -->
+        <div id="generic-modal" class="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 hidden">
+            <div class="bg-white rounded-2xl shadow-2xl max-w-xl w-full overflow-hidden flex flex-col max-h-[90vh]">
+                <div id="modal-header" class="px-6 py-4 bg-slate-900 text-white flex items-center justify-between">
+                    <h3 id="modal-title" class="font-bold text-sm sm:text-base">Modal Title</h3>
+                    <button onclick="closeModal()" class="text-slate-400 hover:text-white text-lg"><i class="fa-solid fa-xmark"></i></button>
+                </div>
+                <div id="modal-body" class="p-6 overflow-y-auto flex-1 space-y-4">
+                    <!-- Form contents injected here -->
+                </div>
+            </div>
+        </div>
+
+        <!-- Profile & Password Modal -->
+        <div id="profile-modal" class="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 hidden">
+            <div class="bg-white rounded-2xl shadow-2xl max-w-md w-full overflow-hidden flex flex-col max-h-[90vh]">
+                <div class="px-6 py-4 bg-slate-900 text-white flex items-center justify-between">
+                    <h3 class="font-bold text-sm sm:text-base"><i class="fa-solid fa-user-shield mr-2 text-brand-400"></i> Account Profile & Settings</h3>
+                    <button onclick="closeProfileModal()" class="text-slate-400 hover:text-white text-lg"><i class="fa-solid fa-xmark"></i></button>
+                </div>
+                <div class="p-6 space-y-5 overflow-y-auto">
+                    <div class="bg-brand-50 p-4 rounded-xl border border-brand-100">
+                        <p class="text-[10px] text-brand-700 uppercase font-bold tracking-wider">Account Summary</p>
+                        <p id="profile-modal-name" class="font-bold text-slate-900 text-base mt-1">Name</p>
+                        <p id="profile-modal-email" class="text-xs text-slate-600">email@jethro.com</p>
+                        <div class="mt-2 flex items-center gap-2">
+                            <span id="profile-modal-role" class="px-2 py-0.5 rounded text-[10px] font-extrabold uppercase bg-brand-200 text-brand-900">ROLE</span>
+                            <span id="profile-modal-id" class="text-[11px] font-mono font-bold text-slate-500">ID: MGR-001</span>
+                        </div>
+                    </div>
+
+                    <form onsubmit="handleNameChange(event)" class="space-y-3 bg-slate-50 p-4 rounded-xl border border-slate-200">
+                        <h4 class="font-bold text-slate-800 text-xs uppercase tracking-wider border-b pb-1.5"><i class="fa-solid fa-id-card mr-1 text-brand-600"></i> Edit Display Name</h4>
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-600 mb-1">Full Name / Display Name</label>
+                            <input type="text" id="profile-display-name" required class="w-full px-3 py-2 border rounded-xl text-xs focus:ring-2 focus:ring-brand-500 outline-none bg-white">
+                        </div>
+                        <div id="profile-name-feedback" class="text-xs font-semibold hidden p-2 rounded-lg"></div>
+                        <div class="flex justify-end pt-1">
+                            <button type="submit" class="px-4 py-2 bg-brand-600 hover:bg-brand-700 text-white rounded-xl text-xs font-semibold shadow flex items-center gap-1.5">
+                                <i class="fa-solid fa-floppy-disk"></i> Save Name
+                            </button>
+                        </div>
+                    </form>
+
+                    <form onsubmit="handlePasswordChange(event)" class="space-y-3.5 pt-2 border-t">
+                        <h4 class="font-bold text-slate-800 text-xs uppercase tracking-wider border-b pb-1.5"><i class="fa-solid fa-key mr-1 text-skyaccent-500"></i> Change Password</h4>
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-600 mb-1">Current Password</label>
+                            <input type="password" id="current-password" required class="w-full px-3 py-2 border rounded-xl text-xs focus:ring-2 focus:ring-brand-500 outline-none">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-600 mb-1">New Password</label>
+                            <input type="password" id="new-password" required class="w-full px-3 py-2 border rounded-xl text-xs focus:ring-2 focus:ring-brand-500 outline-none">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-600 mb-1">Confirm New Password</label>
+                            <input type="password" id="confirm-password" required class="w-full px-3 py-2 border rounded-xl text-xs focus:ring-2 focus:ring-brand-500 outline-none">
+                        </div>
+                        <div id="password-feedback" class="text-xs font-semibold hidden p-2 rounded-lg"></div>
+                        <div class="flex justify-end gap-2 pt-2">
+                            <button type="button" onclick="closeProfileModal()" class="px-4 py-2 border rounded-xl text-xs font-semibold text-slate-600 hover:bg-slate-100">Close</button>
+                            <button type="submit" class="px-4 py-2 bg-slate-800 hover:bg-slate-900 text-white rounded-xl text-xs font-semibold shadow">Update Password</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <div id="toast-container" class="fixed bottom-5 right-5 z-50 space-y-2 pointer-events-none"></div>
+    </div>
+
+    <script>
+        const DB_KEY = 'jethro_akprizi_prod_db_v12';
+        const SUPABASE_URL = 'https://pcwanjjvwyqxnjdsydgo.supabase.co';
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJwY3dhbmpqdncld3lxeG5qZHN5ZGdvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODcwOTc4ODAsImV4cCI6MjEwMjY3Mzg4MH0.nM6JL2afH0S329S2CprOtChr7gx6wl3IU2OVe4PkjdM';
+        const supabaseClient = window.supabase ? window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY) : null;
+        let supabaseSyncing = false;
+        let livePresenceChannel = null;
+        let livePresenceTimer = null;
+        let lastLiveAction = 'Online';
+
+        let defaultDB = {
+            users: [
+                { id: 'MGR-001', name: 'Jethro Manager', email: 'manager@jethro.com', password: 'admin123', role: 'manager', status: 'active', createdAt: '2026-01-01' },
+                { id: 'DRV-001', name: 'Emeka Driver', email: 'driver1@jethro.com', password: 'driver123', role: 'driver', status: 'active', createdAt: '2026-01-05' },
+                { id: 'STF-001', name: 'Grace Staff', email: 'staff1@jethro.com', password: 'staff123', role: 'staff', status: 'active', createdAt: '2026-01-10' }
+            ],
+            products: [
+                { id: 'PRD-001', name: 'Sachet Water Bag (20 Sachets)', category: 'Sachet Water', buyingPrice: 250, sellingPrice: 350, price: 350, stock: 450, unit: 'Bags' },
+                { id: 'PRD-002', name: '75cl Bottled Water (Pack of 12)', category: 'Bottled Water', buyingPrice: 1400, sellingPrice: 1800, price: 1800, stock: 120, unit: 'Packs' },
+                { id: 'PRD-003', name: '50cl Bottled Water (Pack of 12)', category: 'Bottled Water', buyingPrice: 1100, sellingPrice: 1500, price: 1500, stock: 85, unit: 'Packs' },
+                { id: 'PRD-004', name: '18.9L Dispenser Jar Refill', category: 'Dispenser Jars', buyingPrice: 800, sellingPrice: 1200, price: 1200, stock: 60, unit: 'Jars' }
+            ],
+            customers: [
+                { id: 'CUST-001', name: 'Apex Hotel & Suites', phone: '08031234567', outstanding: 15000, emptyBottlesHeld: 12 },
+                { id: 'CUST-002', name: 'Mama Chinedu Supermarket', phone: '08059876543', outstanding: 0, emptyBottlesHeld: 5 }
+            ],
+            sales: [
+                { id: 'SAL-1001', date: '2026-08-14 10:15', customer: 'Walk-in Customer', phone: '', cashier: 'Jethro Manager', userId: 'MGR-001', items: [{ productId: 'PRD-001', name: 'Sachet Water Bag (20 Sachets)', buyingPrice: 250, sellingPrice: 350, price: 350, qty: 10 }], total: 3500, totalProfit: 1000, paymentType: 'Cash', status: 'Paid' },
+                { id: 'SAL-1002', date: '2026-08-14 11:30', customer: 'Apex Hotel & Suites', phone: '08031234567', cashier: 'Jethro Manager', userId: 'MGR-001', items: [{ productId: 'PRD-002', name: '75cl Bottled Water (Pack of 12)', buyingPrice: 1400, sellingPrice: 1800, price: 1800, qty: 5 }], total: 9000, totalProfit: 2000, paymentType: 'Card', status: 'Paid' }
+            ],
+            dispatches: [
+                { id: 'DSP-1001', date: '2026-08-14 09:30', driver: 'Emeka Driver', userId: 'DRV-001', items: [{ productId: 'PRD-001', name: 'Sachet Water Bag (20 Sachets)', qty: 50 }], status: 'In Transit', bottlesCollected: 0, bottlesReturnedToStore: 0, bottlesWithDriver: 0, shortage: 0 }
+            ],
+            damages: [],
+            emptyBottleReturns: [],
+            expenses: [
+                { id: 'EXP-101', date: '2026-08-14 09:00', category: 'Fuel / Energy', description: 'Factory Generator Diesel', amount: 25000, recordedBy: 'Jethro Manager', userId: 'MGR-001' }
+            ],
+            auditLogs: [
+                { id: 'log_init', date: '2026-08-14 08:00', user: 'System', userId: 'MGR-001', action: 'Production Database System Initialized' }
+            ],
+            inventory: {
+                mainStoreEmptyBottles: 140,
+                bottleDepositsTotal: 36000
+            }
+        };
+
+        let db = JSON.parse(JSON.stringify(defaultDB));
+        let currentUser = null;
+        let activeTab = 'dashboard';
+        let selectedPaymentType = 'Cash';
+        let cart = [];
+
+        async function loadDatabase() {
+            try {
+                const stored = localStorage.getItem(DB_KEY);
+                if (stored) {
+                    const parsed = JSON.parse(stored);
+                    if (parsed && Array.isArray(parsed.users)) db = parsed;
+                }
+            } catch (e) {
+                console.error('Failed to load local database:', e);
+            }
+
+            normalizeDatabase();
+
+            // Supabase is the shared source of truth when configured.
+            if (supabaseClient) {
+                try {
+                    const { data, error } = await supabaseClient.from('jethro_app_state').select('data').eq('id', 'main').maybeSingle();
+                    if (error) throw error;
+                    if (data && data.data && Array.isArray(data.data.users)) {
+                        db = data.data;
+                        normalizeDatabase();
+                        localStorage.setItem(DB_KEY, JSON.stringify(db));
+                    } else {
+                        await syncDatabaseToSupabase();
+                    }
+                } catch (e) {
+                    console.warn('Supabase load failed; using local cache:', e);
+                }
+            }
+
+            const activeSessionId = localStorage.getItem('jethro_active_user_id');
+            if (activeSessionId) {
+                const foundUser = db.users.find(u => u.id === activeSessionId && u.status === 'active');
+                if (foundUser) {
+                    currentUser = foundUser;
+                    document.getElementById('login-view').classList.add('hidden');
+                    document.getElementById('main-app').classList.remove('hidden');
+                    setTimeout(() => initAppSession(), 50);
+                }
+            }
+            setupSupabaseRealtime();
+        }
+
+        function normalizeDatabase() {
+            if (!Array.isArray(db.users)) db.users = [];
+            db.users.forEach(u => {
+                if (u.role === 'manager' && u.name && u.name.includes('Alhaji')) u.name = u.name.replace(/Alhaji\s*/gi, '').trim();
+            });
+            if (!Array.isArray(db.dispatches)) db.dispatches = [];
+            if (!Array.isArray(db.auditLogs)) db.auditLogs = [];
+            if (Array.isArray(db.products)) db.products.forEach(p => {
+                if (p.buyingPrice === undefined) p.buyingPrice = p.price || 0;
+                if (p.sellingPrice === undefined) p.sellingPrice = p.price || 0;
+                if (p.price === undefined) p.price = p.sellingPrice;
+            });
+            if (Array.isArray(db.sales)) db.sales.forEach(s => {
+                if (Array.isArray(s.items)) s.items.forEach(item => {
+                    if (item.sellingPrice === undefined) item.sellingPrice = item.price || 0;
+                    if (item.buyingPrice === undefined) {
+                        const prod = db.products.find(p => p.id === item.productId);
+                        item.buyingPrice = prod ? prod.buyingPrice : item.sellingPrice;
+                    }
+                    if (item.price === undefined) item.price = item.sellingPrice;
+                });
+            });
+        }
+
+        async function syncDatabaseToSupabase() {
+            if (!supabaseClient || supabaseSyncing) return;
+            supabaseSyncing = true;
+            try {
+                const { error } = await supabaseClient.from('jethro_app_state').upsert({ id: 'main', data: db, updated_at: new Date().toISOString() }, { onConflict: 'id' });
+                if (error) console.warn('Supabase save failed:', error);
+            } finally {
+                supabaseSyncing = false;
+            }
+        }
+
+        function saveDatabase() {
+            try {
+                normalizeDatabase();
+                localStorage.setItem(DB_KEY, JSON.stringify(db));
+                if (currentUser) localStorage.setItem('jethro_active_user_id', currentUser.id);
+                else localStorage.removeItem('jethro_active_user_id');
+                syncDatabaseToSupabase();
+            } catch (e) {
+                showToast('Error saving data to persistent storage!', 'error');
+            }
+        }
+
+        async function setupSupabaseRealtime() {
+            if (!supabaseClient || livePresenceChannel) return;
+            livePresenceChannel = supabaseClient.channel('jethro-live-team')
+                .on('postgres_changes', { event: '*', schema: 'public', table: 'jethro_app_state' }, async payload => {
+                    if (supabaseSyncing || !payload.new || !payload.new.data) return;
+                    if (payload.new.data.users) {
+                        db = payload.new.data;
+                        normalizeDatabase();
+                        localStorage.setItem(DB_KEY, JSON.stringify(db));
+                        if (currentUser) {
+                            const updated = db.users.find(u => u.id === currentUser.id && u.status === 'active');
+                            if (updated) currentUser = updated;
+                        }
+                        renderTabContent();
+                    }
+                })
+                .on('postgres_changes', { event: '*', schema: 'public', table: 'jethro_live_presence' }, () => refreshLiveTeamActivity())
+                .subscribe();
+            if (currentUser) startLivePresence();
+        }
+
+        async function startLivePresence(action) {
+            if (!currentUser || !supabaseClient) return;
+            lastLiveAction = action || lastLiveAction || 'Online';
+            const row = { session_id: getLiveSessionId(), user_id: currentUser.id, user_name: currentUser.name, role: currentUser.role, current_tab: activeTab, current_action: lastLiveAction, last_seen: new Date().toISOString() };
+            await supabaseClient.from('jethro_live_presence').upsert(row, { onConflict: 'session_id' });
+            clearInterval(livePresenceTimer);
+            livePresenceTimer = setInterval(() => startLivePresence(), 15000);
+            refreshLiveTeamActivity();
+        }
+
+        function getLiveSessionId() {
+            let id = sessionStorage.getItem('jethro_live_session_id');
+            if (!id) { id = 'sess_' + Date.now() + '_' + Math.random().toString(36).slice(2, 8); sessionStorage.setItem('jethro_live_session_id', id); }
+            return id;
+        }
+
+        async function stopLivePresence() {
+            clearInterval(livePresenceTimer);
+            if (supabaseClient) await supabaseClient.from('jethro_live_presence').delete().eq('session_id', getLiveSessionId());
+        }
+
+        async function refreshLiveTeamActivity() {
+            const box = document.getElementById('live-team-activity');
+            if (!box || !supabaseClient || !currentUser || currentUser.role !== 'manager') return;
+            const cutoff = new Date(Date.now() - 45000).toISOString();
+            const { data, error } = await supabaseClient.from('jethro_live_presence').select('*').gte('last_seen', cutoff).order('last_seen', { ascending: false });
+            if (error) return;
+            if (!data || !data.length) { box.innerHTML = '<p class="text-xs text-slate-500">No other users are active right now.</p>'; return; }
+            box.innerHTML = data.map(u => {
+                const mine = u.user_id === currentUser.id;
+                return `<div class="flex items-center justify-between gap-3 py-2 border-b border-slate-100 last:border-0">
+                    <div class="min-w-0"><div class="flex items-center gap-2"><span class="w-2 h-2 rounded-full bg-emerald-500"></span><span class="font-bold text-xs text-slate-800 truncate">${escapeHtml(u.user_name)}${mine ? ' (You)' : ''}</span><span class="text-[9px] uppercase text-slate-400">${escapeHtml(u.role)}</span></div>
+                    <p class="text-[10px] text-slate-500 truncate mt-0.5">${escapeHtml(u.current_action || 'Online')} • ${escapeHtml(u.current_tab || '')}</p></div>
+                    <span class="text-[9px] text-emerald-600 font-bold">LIVE</span></div>`;
+            }).join('');
+        }
+
+        function escapeHtml(value) {
+            return String(value ?? '').replace(/[&<>'"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','\"':'&quot;'}[c]));
+        }
+
+function exportDatabaseJSON() {
+            const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(db, null, 2));
+            const downloadAnchor = document.createElement('a');
+            downloadAnchor.setAttribute("href", dataStr);
+            downloadAnchor.setAttribute("download", `Jethro_Akprizi_DB_Backup_${new Date().toISOString().slice(0,10)}.json`);
+            document.body.appendChild(downloadAnchor);
+            downloadAnchor.click();
+            downloadAnchor.remove();
+            showToast("Database backup downloaded successfully!", "success");
+        }
+
+        function importDatabaseJSON(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const importedDB = JSON.parse(e.target.result);
+                    if (importedDB && Array.isArray(importedDB.users)) {
+                        importedDB.users.forEach(u => {
+                            if (u.role === 'manager' && u.name.includes('Alhaji')) {
+                                u.name = u.name.replace(/Alhaji\s*/gi, '').trim();
+                            }
+                        });
+                        db = importedDB;
+                        if (!Array.isArray(db.dispatches)) db.dispatches = [];
+                        if (!Array.isArray(db.auditLogs)) db.auditLogs = [];
+
+                        // Ensure product and sale buying/selling prices exist
+                        if (Array.isArray(db.products)) {
+                            db.products.forEach(p => {
+                                if (p.buyingPrice === undefined) p.buyingPrice = p.price || 0;
+                                if (p.sellingPrice === undefined) p.sellingPrice = p.price || 0;
+                                if (p.price === undefined) p.price = p.sellingPrice;
+                            });
+                        }
+
+                        saveDatabase();
+                        logActivity(currentUser.name, currentUser.id, "Imported database backup successfully");
+                        showToast("Database restored successfully!", "success");
+                        renderTabContent();
+                    } else {
+                        showToast("Invalid JSON backup structure.", "error");
+                    }
+                } catch (err) {
+                    showToast("Failed to parse JSON backup file.", "error");
+                }
+            };
+            reader.readAsText(file);
+        }
+
+        function resetToCleanState() {
+            showModal('Confirm Database Clean Reset', `
+                <div class="space-y-4">
+                    <p class="text-xs text-slate-600">Are you sure you want to reset all business records to a clean state? User accounts will be preserved, but sales, products, expenses, dispatches, and ledgers will be reset.</p>
+                    <div class="flex justify-end gap-2 pt-2 border-t">
+                        <button type="button" onclick="closeModal()" class="px-4 py-2 border rounded-xl text-xs font-semibold text-slate-600 hover:bg-slate-100">Cancel</button>
+                        <button type="button" onclick="confirmResetCleanState()" class="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-xl text-xs font-semibold shadow">Confirm Clean Reset</button>
+                    </div>
+                </div>
+            `);
+        }
+
+        function confirmResetCleanState() {
+            db.products = [];
+            db.customers = [];
+            db.sales = [];
+            db.dispatches = [];
+            db.damages = [];
+            db.emptyBottleReturns = [];
+            db.expenses = [];
+            db.inventory = { mainStoreEmptyBottles: 0, bottleDepositsTotal: 0 };
+            
+            logActivity(currentUser.name, currentUser.id, "Reset system to clean production database state");
+            saveDatabase();
+            closeModal();
+            showToast("System reset to clean state.", "success");
+            renderTabContent();
+        }
+
+        function showToast(message, type = 'success') {
+            const container = document.getElementById('toast-container');
+            if (!container) return;
+            const toast = document.createElement('div');
+            toast.className = `pointer-events-auto px-4 py-3 rounded-xl shadow-xl text-xs font-bold text-white transition-all duration-300 transform translate-y-2 opacity-0 flex items-center gap-2.5 ${type === 'success' ? 'bg-emerald-600' : type === 'error' ? 'bg-red-600' : 'bg-brand-600'}`;
+            toast.innerHTML = `<i class="fa-solid ${type === 'success' ? 'fa-circle-check' : type === 'error' ? 'fa-triangle-exclamation' : 'fa-circle-info'}"></i> <span>${message}</span>`;
+            container.appendChild(toast);
+            setTimeout(() => { toast.classList.remove('translate-y-2', 'opacity-0'); }, 10);
+            setTimeout(() => {
+                toast.classList.add('translate-y-2', 'opacity-0');
+                setTimeout(() => toast.remove(), 300);
+            }, 3500);
+        }
+
+        function logActivity(userName, userId, actionDesc) {
+            lastLiveAction = actionDesc;
+            if (!Array.isArray(db.auditLogs)) db.auditLogs = [];
+            db.auditLogs.unshift({
+                id: 'log_' + Date.now() + '_' + Math.floor(Math.random() * 1000),
+                date: new Date().toISOString().replace('T', ' ').substring(0, 16),
+                user: userName,
+                userId: userId || (currentUser ? currentUser.id : 'SYSTEM'),
+                action: actionDesc
+            });
+            saveDatabase();
+            if (currentUser && currentUser.id === userId) startLivePresence(actionDesc);
+        }
+
+        function togglePasswordVisibility(fieldId, btn) {
+            const input = document.getElementById(fieldId);
+            if (input.type === 'password') {
+                input.type = 'text';
+                btn.innerHTML = '<i class="fa-solid fa-eye-slash"></i>';
+            } else {
+                input.type = 'password';
+                btn.innerHTML = '<i class="fa-solid fa-eye"></i>';
+            }
+        }
+
+        function handleLogin(e) {
+            e.preventDefault();
+            const inputVal = document.getElementById('login-email').value.trim();
+            const passVal = document.getElementById('login-password').value;
+            const errDiv = document.getElementById('login-error');
+
+            const foundUser = db.users.find(u => 
+                (u.email.toLowerCase() === inputVal.toLowerCase() || u.id.toLowerCase() === inputVal.toLowerCase() || u.name.toLowerCase() === inputVal.toLowerCase()) 
+                && u.password === passVal
+            );
+
+            if (!foundUser) {
+                errDiv.textContent = 'Invalid credentials or unregistered User ID.';
+                errDiv.classList.remove('hidden');
+                return;
+            }
+
+            if (foundUser.status === 'inactive') {
+                errDiv.textContent = 'This account has been deactivated by the Manager.';
+                errDiv.classList.remove('hidden');
+                return;
+            }
+
+            currentUser = foundUser;
+            saveDatabase();
+            startLivePresence('Logged in');
+            errDiv.classList.add('hidden');
+
+            logActivity(currentUser.name, currentUser.id, `User logged in as ${currentUser.role.toUpperCase()}`);
+
+            document.getElementById('login-view').classList.add('hidden');
+            document.getElementById('main-app').classList.remove('hidden');
+
+            initAppSession();
+            showToast(`Welcome back, ${currentUser.name}!`, 'success');
+        }
+
+        async function logout() {
+            if (currentUser) {
+                logActivity(currentUser.name, currentUser.id, 'User logged out');
+            }
+            await stopLivePresence();
+            currentUser = null;
+            localStorage.removeItem('jethro_active_user_id');
+            document.getElementById('main-app').classList.add('hidden');
+            document.getElementById('login-view').classList.remove('hidden');
+            document.getElementById('login-form').reset();
+        }
+
+        function initAppSession() {
+            if (!currentUser) return;
+            updateUIUserReferences();
+            document.getElementById('current-date-display').textContent = new Date().toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' });
+
+            renderSidebarNav();
+
+            if (currentUser.role === 'manager') switchTab('dashboard');
+            else if (currentUser.role === 'driver') switchTab('dispatches');
+            else switchTab('sales_pos');
+        }
+
+        function updateUIUserReferences() {
+            if (!currentUser) return;
+            document.getElementById('sidebar-username').textContent = currentUser.name;
+            document.getElementById('sidebar-email').textContent = currentUser.email || currentUser.id;
+            document.getElementById('sidebar-role-badge').textContent = currentUser.role.toUpperCase();
+            document.getElementById('user-avatar-initials').textContent = currentUser.name.charAt(0).toUpperCase();
+        }
+
+        function toggleSidebarMobile() {
+            const sidebar = document.getElementById('sidebar');
+            const backdrop = document.getElementById('sidebar-backdrop');
+            sidebar.classList.toggle('-translate-x-full');
+            backdrop.classList.toggle('hidden');
+        }
+
+        function renderSidebarNav() {
+            const nav = document.getElementById('sidebar-nav');
+            let html = '';
+
+            const links = [
+                { id: 'dashboard', label: 'Dashboard Overview', icon: 'fa-chart-pie', roles: ['manager', 'staff', 'driver'] },
+                { id: 'sales_pos', label: 'Sales & POS Terminal', icon: 'fa-cash-register', roles: ['manager', 'staff', 'driver'] },
+                { id: 'inventory', label: 'Store Inventory', icon: 'fa-boxes-stacked', roles: ['manager', 'staff', 'driver'] },
+                { id: 'empty_bottles', label: 'Empty Bottles & Returns', icon: 'fa-wine-bottle', roles: ['manager', 'staff', 'driver'] },
+                { id: 'damages', label: 'Damaged & Leaked', icon: 'fa-triangle-exclamation', roles: ['manager', 'staff', 'driver'] },
+                { id: 'dispatches', label: 'Driver Dispatches', icon: 'fa-truck-fast', roles: ['manager', 'driver', 'staff'] },
+                { id: 'customers', label: 'Customer Ledgers', icon: 'fa-users', roles: ['manager', 'staff'] },
+                { id: 'expenses', label: 'Operating Expenses', icon: 'fa-wallet', roles: ['manager'] },
+                { id: 'reports', label: 'Reports & Analytics', icon: 'fa-chart-column', roles: ['manager'] },
+                { id: 'users', label: 'Staff Management', icon: 'fa-user-gear', roles: ['manager'] },
+                { id: 'audit_logs', label: 'Activity Audit Logs', icon: 'fa-shield-halved', roles: ['manager'] },
+            ];
+
+            links.forEach(link => {
+                if (link.roles.includes(currentUser.role)) {
+                    const isActive = activeTab === link.id;
+                    html += `
+                        <button onclick="switchTab('${link.id}'); if(window.innerWidth < 768) toggleSidebarMobile();" class="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl font-medium transition ${isActive ? 'bg-brand-600 text-white shadow-md' : 'text-slate-300 hover:bg-slate-800 hover:text-white'}">
+                            <i class="fa-solid ${link.icon} w-5 text-center text-skyaccent-400"></i>
+                            <span>${link.label}</span>
+                        </button>
+                    `;
+                }
+            });
+
+            nav.innerHTML = html;
+        }
+
+        function switchTab(tabId) {
+            if (['expenses', 'reports', 'users', 'audit_logs'].includes(tabId) && currentUser.role !== 'manager') {
+                showToast('Access Denied: Manager privileges required.', 'error');
+                return;
+            }
+
+            activeTab = tabId;
+            startLivePresence('Viewing ' + tabId.replace(/_/g, ' '));
+            renderSidebarNav();
+            renderTabContent();
+        }
+
+        function renderTabContent() {
+            const container = document.getElementById('main-content-area');
+            const titleEl = document.getElementById('page-title');
+
+            switch(activeTab) {
+                case 'dashboard':
+                    titleEl.textContent = 'Dashboard & Metrics';
+                    container.innerHTML = getDashboardHTML();
+                    if (currentUser && currentUser.role === 'manager') setTimeout(refreshLiveTeamActivity, 50);
+                    break;
+                case 'sales_pos':
+                    titleEl.textContent = 'Sales & POS Terminal';
+                    container.innerHTML = getSalesPOSHTML();
+                    setupPOSLogic();
+                    break;
+                case 'inventory':
+                    titleEl.textContent = 'Store Product Inventory';
+                    container.innerHTML = getInventoryHTML();
+                    break;
+                case 'empty_bottles':
+                    titleEl.textContent = 'Empty Bottle Return Ledger';
+                    container.innerHTML = getEmptyBottlesHTML();
+                    break;
+                case 'damages':
+                    titleEl.textContent = 'Damaged & Leaked Products Log';
+                    container.innerHTML = getDamagesHTML();
+                    break;
+                case 'dispatches':
+                    titleEl.textContent = 'Driver Dispatches & Return Tracking';
+                    container.innerHTML = getDispatchesHTML();
+                    break;
+                case 'customers':
+                    titleEl.textContent = 'Customer Credit & Bottle Accounts';
+                    container.innerHTML = getCustomersHTML();
+                    break;
+                case 'expenses':
+                    titleEl.textContent = 'Operating Expenses Ledger';
+                    container.innerHTML = getExpensesHTML();
+                    break;
+                case 'reports':
+                    titleEl.textContent = 'Reports & Export Management';
+                    container.innerHTML = getReportsHTML();
+                    break;
+                case 'users':
+                    titleEl.textContent = 'Permanent Staff & User Accounts';
+                    container.innerHTML = getUsersHTML();
+                    break;
+                case 'audit_logs':
+                    titleEl.textContent = 'System Activity Audit Logs';
+                    container.innerHTML = getAuditLogsHTML();
+                    break;
+                default:
+                    container.innerHTML = `<div class="p-6 bg-white rounded-xl shadow">Tab under development.</div>`;
+            }
+        }
+
+        function getDashboardHTML() {
+            const totalRevenue = db.sales.reduce((acc, s) => acc + s.total, 0);
+            
+            // Calculate Total Profit/Loss from Sales
+            let totalSalesProfit = 0;
+            db.sales.forEach(s => {
+                if (s.totalProfit !== undefined) {
+                    totalSalesProfit += s.totalProfit;
+                } else if (Array.isArray(s.items)) {
+                    s.items.forEach(item => {
+                        const bPrice = item.buyingPrice !== undefined ? item.buyingPrice : (item.sellingPrice || item.price || 0);
+                        const sPrice = item.sellingPrice !== undefined ? item.sellingPrice : (item.price || 0);
+                        totalSalesProfit += (sPrice - bPrice) * item.qty;
+                    });
+                }
+            });
+
+            const totalExpenses = db.expenses.reduce((acc, e) => acc + (e.amount || 0), 0);
+            const netProfit = totalSalesProfit - totalExpenses;
+            
+            const fullProductStock = db.products.reduce((acc, p) => acc + p.stock, 0);
+            const totalInventoryValue = db.products.reduce((acc, p) => acc + (p.stock * (p.sellingPrice || p.price || 0)), 0);
+            const emptyBottlesCount = db.inventory ? db.inventory.mainStoreEmptyBottles || 0 : 0;
+            const bottlesWithDrivers = (db.dispatches || []).reduce((acc, d) => acc + (d.bottlesWithDriver || 0), 0);
+            const damagedCount = (db.damages || []).reduce((acc, dm) => acc + dm.qty, 0);
+            const creditTotal = db.customers.reduce((acc, c) => acc + (c.outstanding || 0), 0);
+
+            return `
+                <div class="space-y-6">
+                    <div>
+                        <p class="text-xs font-bold uppercase text-slate-400 mb-3 tracking-wider"><i class="fa-solid fa-chart-line text-skyaccent-500 mr-1"></i> Executive Key Metrics</p>
+                        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                            <div onclick="switchTab('reports')" class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm cursor-pointer hover:border-brand-500 transition">
+                                <p class="text-xs font-semibold text-slate-500 uppercase">Total Gross Sales</p>
+                                <h3 class="text-2xl font-bold text-slate-900 mt-1">₦${totalRevenue.toLocaleString()}</h3>
+                                <span class="text-xs text-brand-600 font-medium mt-1 inline-block">${db.sales.length} completed transactions</span>
+                            </div>
+
+                            <div onclick="switchTab('reports')" class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm cursor-pointer hover:border-emerald-500 transition">
+                                <p class="text-xs font-semibold text-slate-500 uppercase">Sales Gross Profit / Loss</p>
+                                <h3 class="text-2xl font-bold ${totalSalesProfit >= 0 ? 'text-emerald-600' : 'text-red-600'} mt-1">
+                                    ${totalSalesProfit > 0 ? '₦' + totalSalesProfit.toLocaleString() : totalSalesProfit < 0 ? '-₦' + Math.abs(totalSalesProfit).toLocaleString() : '₦0 (No Profit)'}
+                                </h3>
+                                <span class="text-xs ${totalSalesProfit >= 0 ? 'text-emerald-600' : 'text-red-600'} font-medium mt-1 inline-block">Before operating expenses</span>
+                            </div>
+
+                            <div onclick="switchTab('expenses')" class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm cursor-pointer hover:border-red-500 transition">
+                                <p class="text-xs font-semibold text-slate-500 uppercase">Total Expenses</p>
+                                <h3 class="text-2xl font-bold text-red-600 mt-1">₦${totalExpenses.toLocaleString()}</h3>
+                                <span class="text-xs text-red-500 font-medium mt-1 inline-block">${db.expenses.length} expense entries</span>
+                            </div>
+
+                            <div onclick="switchTab('reports')" class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm cursor-pointer hover:border-skyaccent-500 transition">
+                                <p class="text-xs font-semibold text-slate-500 uppercase">Net Profit / Loss</p>
+                                <h3 class="text-2xl font-bold ${netProfit >= 0 ? 'text-emerald-600' : 'text-red-600'} mt-1">
+                                    ${netProfit > 0 ? '₦' + netProfit.toLocaleString() : netProfit < 0 ? '-₦' + Math.abs(netProfit).toLocaleString() : '₦0'}
+                                </h3>
+                                <span class="text-xs text-slate-500 font-medium mt-1 inline-block">Gross Profit − Operating Expenses</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                        <div onclick="switchTab('inventory')" class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex items-center justify-between cursor-pointer">
+                            <div>
+                                <p class="text-[11px] font-bold text-slate-500 uppercase">Active Products</p>
+                                <h4 class="text-xl font-bold text-slate-800 mt-0.5">${db.products.length} Products</h4>
+                            </div>
+                            <div class="w-10 h-10 rounded-lg bg-brand-50 text-brand-600 flex items-center justify-center"><i class="fa-solid fa-boxes-stacked"></i></div>
+                        </div>
+
+                        <div onclick="switchTab('empty_bottles')" class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex items-center justify-between cursor-pointer">
+                            <div>
+                                <p class="text-[11px] font-bold text-slate-500 uppercase">Store Empty Shells</p>
+                                <h4 class="text-xl font-bold text-skyaccent-600 mt-0.5">${emptyBottlesCount.toLocaleString()} Shells</h4>
+                            </div>
+                            <div class="w-10 h-10 rounded-lg bg-skyaccent-50 text-skyaccent-600 flex items-center justify-center"><i class="fa-solid fa-wine-bottle"></i></div>
+                        </div>
+
+                        <div onclick="switchTab('dispatches')" class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex items-center justify-between cursor-pointer">
+                            <div>
+                                <p class="text-[11px] font-bold text-slate-500 uppercase">Bottles With Drivers</p>
+                                <h4 class="text-xl font-bold text-amber-600 mt-0.5">${bottlesWithDrivers.toLocaleString()} Units</h4>
+                            </div>
+                            <div class="w-10 h-10 rounded-lg bg-amber-50 text-amber-600 flex items-center justify-center"><i class="fa-solid fa-truck-fast"></i></div>
+                        </div>
+
+                        <div onclick="switchTab('damages')" class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex items-center justify-between cursor-pointer">
+                            <div>
+                                <p class="text-[11px] font-bold text-slate-500 uppercase">Damaged / Leaked</p>
+                                <h4 class="text-xl font-bold text-red-600 mt-0.5">${damagedCount.toLocaleString()} Units</h4>
+                            </div>
+                            <div class="w-10 h-10 rounded-lg bg-red-50 text-red-600 flex items-center justify-center"><i class="fa-solid fa-triangle-exclamation"></i></div>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                        <div class="lg:col-span-2 bg-white rounded-2xl border border-slate-200 p-6 shadow-sm overflow-hidden">
+                            <div class="flex items-center justify-between mb-4">
+                                <h3 class="font-bold text-slate-800 text-sm sm:text-base"><i class="fa-solid fa-clock-rotate-left mr-2 text-brand-600"></i> Recent Sales Activity & Profit</h3>
+                                <button onclick="switchTab('sales_pos')" class="text-xs font-semibold text-brand-600 hover:underline">Go to POS Terminal &rarr;</button>
+                            </div>
+                            <div class="overflow-x-auto">
+                                ${db.sales.length === 0 ? `
+                                    <div class="text-center py-8 text-slate-400 text-xs bg-slate-50 rounded-xl border">No sales transactions logged yet. Enter real sales in POS.</div>
+                                ` : `
+                                    <table class="w-full text-left text-xs whitespace-nowrap">
+                                        <thead>
+                                            <tr class="border-b text-slate-400 uppercase font-semibold">
+                                                <th class="pb-3 pr-4">Ref / Date</th>
+                                                <th class="pb-3 pr-4">Customer</th>
+                                                <th class="pb-3 pr-4">Cashier</th>
+                                                <th class="pb-3 pr-4">Total (₦)</th>
+                                                <th class="pb-3 pr-4">Profit / Loss (₦)</th>
+                                                <th class="pb-3 pr-4">Payment</th>
+                                                <th class="pb-3 text-right">Action</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody class="divide-y divide-slate-100">
+                                            ${db.sales.slice(0, 5).map(s => {
+                                                let saleProfit = 0;
+                                                if (s.totalProfit !== undefined) {
+                                                    saleProfit = s.totalProfit;
+                                                } else if (Array.isArray(s.items)) {
+                                                    s.items.forEach(it => {
+                                                        const bp = it.buyingPrice !== undefined ? it.buyingPrice : (it.sellingPrice || it.price || 0);
+                                                        const sp = it.sellingPrice !== undefined ? it.sellingPrice : (it.price || 0);
+                                                        saleProfit += (sp - bp) * it.qty;
+                                                    });
+                                                }
+                                                return `
+                                                    <tr class="hover:bg-brand-50/40">
+                                                        <td class="py-3 pr-4 font-bold text-slate-800">${s.id}<br><span class="text-[10px] text-slate-400 font-normal">${s.date}</span></td>
+                                                        <td class="py-3 pr-4 font-medium text-slate-800">${s.customer}<br><span class="text-[10px] text-slate-400">${s.phone || 'N/A'}</span></td>
+                                                        <td class="py-3 pr-4 text-slate-600">${s.cashier}<br><span class="text-[10px] text-brand-700 font-mono">${s.userId}</span></td>
+                                                        <td class="py-3 pr-4 font-extrabold text-slate-900">₦${s.total.toLocaleString()}</td>
+                                                        <td class="py-3 pr-4 font-bold ${saleProfit > 0 ? 'text-emerald-600' : saleProfit < 0 ? 'text-red-600' : 'text-slate-500'}">
+                                                            ${saleProfit > 0 ? '+₦' + saleProfit.toLocaleString() : saleProfit < 0 ? '-₦' + Math.abs(saleProfit).toLocaleString() : '₦0'}
+                                                        </td>
+                                                        <td class="py-3 pr-4"><span class="px-2 py-0.5 bg-brand-50 text-brand-700 border border-brand-100 rounded text-[10px] font-semibold">${s.paymentType}</span></td>
+                                                        <td class="py-3 text-right flex items-center justify-end gap-1">
+                                                            <button onclick="openEditSaleModal('${s.id}')" class="px-2 py-1 bg-slate-100 hover:bg-brand-50 text-slate-700 rounded text-xs font-semibold" title="Edit Sale">
+                                                                <i class="fa-solid fa-pen-to-square"></i>
+                                                            </button>
+                                                            ${currentUser.role === 'manager' ? `
+                                                                <button onclick="openDeleteSaleModal('${s.id}')" class="px-2 py-1 bg-red-50 hover:bg-red-100 text-red-600 rounded text-xs font-semibold" title="Delete Sale">
+                                                                    <i class="fa-solid fa-trash-can"></i>
+                                                                </button>
+                                                            ` : ''}
+                                                        </td>
+                                                    </tr>
+                                                `;
+                                            }).join('')}
+                                        </tbody>
+                                    </table>
+                                `}
+                            </div>
+                        </div>
+
+                        <div class="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm flex flex-col justify-between">
+                            <div>
+                                <h3 class="font-bold text-slate-800 text-base mb-3"><i class="fa-solid fa-bolt mr-2 text-skyaccent-500"></i> Operational Controls</h3>
+                                <div class="space-y-2.5">
+                                    <button onclick="openRecordDamageModal()" class="w-full py-2.5 px-4 bg-red-50 hover:bg-red-100 text-red-700 font-semibold rounded-xl text-xs transition flex items-center justify-between border border-red-200">
+                                        <span><i class="fa-solid fa-triangle-exclamation mr-2"></i> Report Damaged / Leaked</span>
+                                        <i class="fa-solid fa-arrow-right"></i>
+                                    </button>
+                                    <button onclick="openRecordBottleReturnModal()" class="w-full py-2.5 px-4 bg-skyaccent-50 hover:bg-skyaccent-100 text-skyaccent-700 font-semibold rounded-xl text-xs transition flex items-center justify-between border border-skyaccent-200">
+                                        <span><i class="fa-solid fa-wine-bottle mr-2"></i> Record Empty Bottle Return</span>
+                                        <i class="fa-solid fa-arrow-right"></i>
+                                    </button>
+                                    <button onclick="switchTab('sales_pos')" class="w-full py-2.5 px-4 bg-brand-50 hover:bg-brand-100 text-brand-700 font-semibold rounded-xl text-xs transition flex items-center justify-between border border-brand-200">
+                                        <span><i class="fa-solid fa-cash-register mr-2"></i> Open POS Sales Terminal</span>
+                                        <i class="fa-solid fa-arrow-right"></i>
+                                    </button>
+                                </div>
+                            </div>
+
+                            <div class="mt-6 pt-4 border-t">
+                                <div class="flex items-center justify-between text-xs text-slate-500">
+                                    <span>Net Profit Balance:</span>
+                                    <span class="font-bold ${netProfit >= 0 ? 'text-emerald-600' : 'text-red-600'} text-sm">
+                                        ${netProfit >= 0 ? '₦' + netProfit.toLocaleString() : '-₦' + Math.abs(netProfit).toLocaleString()}
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    ${currentUser && currentUser.role === 'manager' ? `
+                    <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
+                        <div class="flex items-center justify-between mb-3">
+                            <div><p class="text-xs font-bold uppercase text-slate-400 tracking-wider"><i class="fa-solid fa-tower-broadcast text-emerald-500 mr-1"></i> Live Team Activity</p><p class="text-[10px] text-slate-400 mt-1">See what other logged-in users are doing in real time.</p></div>
+                            <span class="text-[9px] font-bold text-emerald-600 bg-emerald-50 px-2 py-1 rounded-full">LIVE</span>
+                        </div>
+                        <div id="live-team-activity"><p class="text-xs text-slate-500">Loading live activity...</p></div>
+                    </div>` : ''}
+                </div>
+            `;
+        }
+
+        function getSalesPOSHTML() {
+            return `
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                    <div class="lg:col-span-2 space-y-4">
+                        <div class="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm flex items-center justify-between gap-4">
+                            <div class="relative flex-1">
+                                <i class="fa-solid fa-magnifying-glass absolute left-3.5 top-3.5 text-slate-400 text-xs"></i>
+                                <input type="text" id="pos-search" oninput="filterPOSProducts(this.value)" placeholder="Search products by name or category..." class="w-full pl-10 pr-4 py-2.5 bg-slate-50 border rounded-xl text-xs focus:ring-2 focus:ring-brand-500 outline-none">
+                            </div>
+                            ${currentUser.role === 'manager' ? `
+                                <button onclick="openAddProductModal()" class="px-4 py-2.5 bg-brand-600 hover:bg-brand-700 text-white font-semibold rounded-xl text-xs shadow whitespace-nowrap">
+                                    <i class="fa-solid fa-plus mr-1"></i> Add Product
+                                </button>
+                            ` : ''}
+                        </div>
+
+                        <div id="pos-products-grid" class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
+                            <!-- Populated dynamically -->
+                        </div>
+                    </div>
+
+                    <div class="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm flex flex-col justify-between">
+                        <div>
+                            <div class="flex items-center justify-between border-b pb-3 mb-4">
+                                <h3 class="font-bold text-slate-800 text-sm"><i class="fa-solid fa-cart-shopping mr-2 text-brand-600"></i> Active Order Cart</h3>
+                                <button onclick="clearCart()" class="text-xs text-red-500 hover:underline font-semibold">Clear Cart</button>
+                            </div>
+
+                            <div class="space-y-3 mb-4">
+                                <div>
+                                    <label class="block text-[11px] font-semibold text-slate-600 uppercase mb-1 flex items-center justify-between">
+                                        <span>Customer Name</span>
+                                        <span id="pos-cust-name-badge" class="text-[10px] font-bold text-slate-400">(Optional)</span>
+                                    </label>
+                                    <input type="text" id="pos-customer-name" placeholder="e.g. Apex Hotel / Walk-in" class="w-full px-3 py-2 border rounded-xl text-xs focus:ring-2 focus:ring-brand-500 outline-none">
+                                </div>
+                                <div>
+                                    <label class="block text-[11px] font-semibold text-slate-600 uppercase mb-1 flex items-center justify-between">
+                                        <span>Customer Phone</span>
+                                        <span id="pos-cust-phone-badge" class="text-[10px] font-bold text-slate-400">(Optional)</span>
+                                    </label>
+                                    <input type="text" id="pos-customer-phone" placeholder="e.g. 08012345678" class="w-full px-3 py-2 border rounded-xl text-xs focus:ring-2 focus:ring-brand-500 outline-none">
+                                </div>
+                                <div id="pos-credit-warning" class="hidden text-[11px] text-amber-800 bg-amber-50 p-2.5 rounded-xl border border-amber-200 font-medium">
+                                    <i class="fa-solid fa-circle-exclamation mr-1"></i> Customer Name & Phone Number are <strong>mandatory</strong> for Credit sales!
+                                </div>
+                            </div>
+
+                            <div id="pos-cart-items" class="space-y-2 max-h-56 overflow-y-auto mb-4 pr-1">
+                                <p class="text-xs text-slate-400 text-center py-6">Your cart is empty. Select products from the left.</p>
+                            </div>
+                        </div>
+
+                        <div class="border-t pt-4 space-y-4">
+                            <div class="space-y-1.5 text-xs">
+                                <div class="flex justify-between text-slate-600">
+                                    <span>Estimated Profit:</span>
+                                    <span id="pos-cart-profit" class="font-bold text-emerald-600">₦0</span>
+                                </div>
+                                <div class="flex justify-between font-bold text-sm text-slate-900 border-t pt-2">
+                                    <span>Total Payable:</span>
+                                    <span id="pos-cart-total" class="text-brand-600 text-base">₦0</span>
+                                </div>
+                            </div>
+
+                            <div>
+                                <label class="block text-[11px] font-semibold text-slate-600 uppercase mb-1.5">Payment Method</label>
+                                <div class="grid grid-cols-2 sm:grid-cols-4 gap-1.5">
+                                    <button type="button" onclick="setPaymentType('Cash')" id="pay-btn-Cash" class="py-2 px-1 border rounded-xl text-xs font-bold transition bg-brand-600 text-white border-brand-600 shadow flex items-center justify-center gap-1">
+                                        <i class="fa-solid fa-money-bill-wave"></i> Cash
+                                    </button>
+                                    <button type="button" onclick="setPaymentType('Card')" id="pay-btn-Card" class="py-2 px-1 border rounded-xl text-xs font-bold transition bg-slate-50 text-slate-700 hover:bg-slate-100 border-slate-200 flex items-center justify-center gap-1">
+                                        <i class="fa-solid fa-credit-card"></i> Card
+                                    </button>
+                                    <button type="button" onclick="setPaymentType('Transfer')" id="pay-btn-Transfer" class="py-2 px-1 border rounded-xl text-xs font-bold transition bg-slate-50 text-slate-700 hover:bg-slate-100 border-slate-200 flex items-center justify-center gap-1">
+                                        <i class="fa-solid fa-arrow-right-arrow-left"></i> Transfer
+                                    </button>
+                                    <button type="button" onclick="setPaymentType('Credit')" id="pay-btn-Credit" class="py-2 px-1 border rounded-xl text-xs font-bold transition bg-slate-50 text-slate-700 hover:bg-slate-100 border-slate-200 flex items-center justify-center gap-1">
+                                        <i class="fa-solid fa-clock-rotate-left"></i> Credit
+                                    </button>
+                                </div>
+                            </div>
+
+                            <button onclick="completeSale()" class="w-full py-3 bg-brand-600 hover:bg-brand-700 text-white font-bold rounded-xl shadow-md transition flex items-center justify-center gap-2 text-xs">
+                                <i class="fa-solid fa-check"></i> Complete Sale & Log Transaction
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        function setupPOSLogic() {
+            renderPOSProducts(db.products);
+            renderCart();
+            setPaymentType('Cash');
+        }
+
+        function renderPOSProducts(list) {
+            const grid = document.getElementById('pos-products-grid');
+            if (!grid) return;
+            if (list.length === 0) {
+                grid.innerHTML = `<div class="col-span-full py-8 text-center text-xs text-slate-400 bg-white rounded-2xl border p-4">No products found in inventory. Click "Add Product" to populate inventory.</div>`;
+                return;
+            }
+
+            grid.innerHTML = list.map(p => {
+                const bPrice = p.buyingPrice !== undefined ? p.buyingPrice : (p.price || 0);
+                const sPrice = p.sellingPrice !== undefined ? p.sellingPrice : (p.price || 0);
+                const profitMargin = sPrice - bPrice;
+
+                return `
+                    <div class="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm flex flex-col justify-between hover:border-brand-500 transition">
+                        <div>
+                            <div class="flex items-start justify-between gap-2">
+                                <span class="px-2 py-0.5 bg-brand-50 text-brand-700 rounded text-[10px] font-semibold">${p.category}</span>
+                                <span class="text-xs font-bold ${p.stock > 10 ? 'text-emerald-600' : 'text-red-500'}">${p.stock} ${p.unit} left</span>
+                            </div>
+                            <h4 class="font-bold text-slate-800 text-sm mt-2">${p.name}</h4>
+                            <div class="mt-2 space-y-0.5">
+                                <p class="text-xs font-extrabold text-brand-600">Sell Price: ₦${sPrice.toLocaleString()}</p>
+                                <p class="text-[11px] text-slate-500">Buy Price: ₦${bPrice.toLocaleString()}</p>
+                                <p class="text-[10px] font-bold ${profitMargin >= 0 ? 'text-emerald-600' : 'text-red-500'}">
+                                    Margin: ${profitMargin > 0 ? '+₦' + profitMargin.toLocaleString() : profitMargin < 0 ? '-₦' + Math.abs(profitMargin).toLocaleString() : 'No profit'}
+                                </p>
+                            </div>
+                        </div>
+                        <div class="mt-4 pt-3 border-t flex items-center justify-between gap-2">
+                            <button onclick="addToCart('${p.id}')" class="w-full py-2 bg-brand-50 hover:bg-brand-600 hover:text-white text-brand-700 font-semibold rounded-xl text-xs transition flex items-center justify-center gap-1.5">
+                                <i class="fa-solid fa-cart-plus"></i> Add to Cart
+                            </button>
+                            ${currentUser.role === 'manager' ? `
+                                <button onclick="openEditProductModal('${p.id}')" class="p-2 bg-slate-100 hover:bg-brand-100 text-slate-700 rounded-xl text-xs" title="Edit Product">
+                                    <i class="fa-solid fa-pen"></i>
+                                </button>
+                            ` : ''}
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function filterPOSProducts(query) {
+            const filtered = db.products.filter(p => p.name.toLowerCase().includes(query.toLowerCase()) || p.category.toLowerCase().includes(query.toLowerCase()));
+            renderPOSProducts(filtered);
+        }
+
+        function addToCart(productId) {
+            const prod = db.products.find(p => p.id === productId);
+            if (!prod) return;
+            if (prod.stock <= 0) {
+                showToast(`Product ${prod.name} is out of stock!`, 'error');
+                return;
+            }
+
+            const existing = cart.find(item => item.productId === productId);
+            const sPrice = prod.sellingPrice !== undefined ? prod.sellingPrice : (prod.price || 0);
+            const bPrice = prod.buyingPrice !== undefined ? prod.buyingPrice : sPrice;
+
+            if (existing) {
+                if (existing.qty + 1 > prod.stock) {
+                    showToast('Cannot add more than available stock quantity.', 'error');
+                    return;
+                }
+                existing.qty += 1;
+            } else {
+                cart.push({
+                    productId: prod.id,
+                    name: prod.name,
+                    buyingPrice: bPrice,
+                    sellingPrice: sPrice,
+                    price: sPrice,
+                    qty: 1
+                });
+            }
+            renderCart();
+        }
+
+        function updateCartQty(productId, delta) {
+            const item = cart.find(i => i.productId === productId);
+            if (!item) return;
+            const prod = db.products.find(p => p.id === productId);
+            const newQty = item.qty + delta;
+            if (newQty <= 0) {
+                cart = cart.filter(i => i.productId !== productId);
+            } else if (prod && newQty > prod.stock) {
+                showToast('Exceeds available stock quantity.', 'error');
+                return;
+            } else {
+                item.qty = newQty;
+            }
+            renderCart();
+        }
+
+        function clearCart() {
+            cart = [];
+            renderCart();
+        }
+
+        function setPaymentType(type) {
+            selectedPaymentType = type;
+            const types = ['Cash', 'Card', 'Transfer', 'Credit'];
+            
+            types.forEach(t => {
+                const btn = document.getElementById(`pay-btn-${t}`);
+                if (btn) {
+                    if (t === type) {
+                        btn.className = t === 'Credit' 
+                            ? 'py-2 px-1 border rounded-xl text-xs font-bold transition bg-amber-600 text-white border-amber-600 shadow flex items-center justify-center gap-1' 
+                            : 'py-2 px-1 border rounded-xl text-xs font-bold transition bg-brand-600 text-white border-brand-600 shadow flex items-center justify-center gap-1';
+                    } else {
+                        btn.className = 'py-2 px-1 border rounded-xl text-xs font-bold transition bg-slate-50 text-slate-700 hover:bg-slate-100 border-slate-200 flex items-center justify-center gap-1';
+                    }
+                }
+            });
+
+            const nameBadge = document.getElementById('pos-cust-name-badge');
+            const phoneBadge = document.getElementById('pos-cust-phone-badge');
+            const warningEl = document.getElementById('pos-credit-warning');
+
+            if (type === 'Credit') {
+                if (nameBadge) nameBadge.innerHTML = '<span class="text-red-500 font-extrabold">* Required</span>';
+                if (phoneBadge) phoneBadge.innerHTML = '<span class="text-red-500 font-extrabold">* Required</span>';
+                if (warningEl) warningEl.classList.remove('hidden');
+            } else {
+                if (nameBadge) nameBadge.innerHTML = '<span class="text-slate-400 font-bold">(Optional)</span>';
+                if (phoneBadge) phoneBadge.innerHTML = '<span class="text-slate-400 font-bold">(Optional)</span>';
+                if (warningEl) warningEl.classList.add('hidden');
+            }
+        }
+
+        function renderCart() {
+            const container = document.getElementById('pos-cart-items');
+            const totalEl = document.getElementById('pos-cart-total');
+            const profitEl = document.getElementById('pos-cart-profit');
+            if (!container || !totalEl) return;
+
+            if (cart.length === 0) {
+                container.innerHTML = `<p class="text-xs text-slate-400 text-center py-6">Your cart is empty. Select products from the left.</p>`;
+                totalEl.textContent = '₦0';
+                if (profitEl) profitEl.textContent = '₦0';
+                return;
+            }
+
+            let total = 0;
+            let profit = 0;
+
+            container.innerHTML = cart.map(item => {
+                const sp = item.sellingPrice !== undefined ? item.sellingPrice : (item.price || 0);
+                const bp = item.buyingPrice !== undefined ? item.buyingPrice : sp;
+                const sub = sp * item.qty;
+                const itemProfit = (sp - bp) * item.qty;
+
+                total += sub;
+                profit += itemProfit;
+
+                return `
+                    <div class="flex items-center justify-between p-2.5 bg-slate-50 rounded-xl border border-slate-200 text-xs">
+                        <div class="truncate pr-2">
+                            <p class="font-bold text-slate-800 truncate">${item.name}</p>
+                            <p class="text-[10px] text-slate-500">Sell: ₦${sp.toLocaleString()} | Buy: ₦${bp.toLocaleString()}</p>
+                            <p class="text-[10px] font-bold ${itemProfit >= 0 ? 'text-emerald-600' : 'text-red-500'}">
+                                Unit Profit: ${sp - bp > 0 ? '₦' + (sp - bp).toLocaleString() : sp - bp < 0 ? '-₦' + Math.abs(sp - bp).toLocaleString() : '₦0'}
+                            </p>
+                        </div>
+                        <div class="flex items-center gap-2 flex-shrink-0">
+                            <div class="flex items-center border rounded bg-white">
+                                <button onclick="updateCartQty('${item.productId}', -1)" class="px-2 py-0.5 text-slate-600 hover:bg-slate-100">-</button>
+                                <span class="px-2 font-bold text-xs">${item.qty}</span>
+                                <button onclick="updateCartQty('${item.productId}', 1)" class="px-2 py-0.5 text-slate-600 hover:bg-slate-100">+</button>
+                            </div>
+                            <span class="font-bold text-slate-900 w-16 text-right">₦${sub.toLocaleString()}</span>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+
+            totalEl.textContent = '₦' + total.toLocaleString();
+            if (profitEl) {
+                profitEl.textContent = profit > 0 ? '+₦' + profit.toLocaleString() : profit < 0 ? '-₦' + Math.abs(profit).toLocaleString() : '₦0 (No Profit)';
+                profitEl.className = profit >= 0 ? 'font-bold text-emerald-600' : 'font-bold text-red-600';
+            }
+        }
+
+        function completeSale() {
+            if (cart.length === 0) {
+                showToast('Cart is empty. Select products first.', 'error');
+                return;
+            }
+
+            const rawName = document.getElementById('pos-customer-name').value.trim();
+            const rawPhone = document.getElementById('pos-customer-phone').value.trim();
+
+            if (selectedPaymentType === 'Credit') {
+                if (!rawName) {
+                    showToast('Customer Name is mandatory for Credit sales!', 'error');
+                    document.getElementById('pos-customer-name').focus();
+                    return;
+                }
+                if (!rawPhone) {
+                    showToast('Customer Phone Number is mandatory for Credit sales!', 'error');
+                    document.getElementById('pos-customer-phone').focus();
+                    return;
+                }
+            }
+
+            const custName = rawName || 'Walk-in Customer';
+            const custPhone = rawPhone || '';
+            let total = 0;
+            let totalProfit = 0;
+
+            const finalItems = cart.map(item => {
+                const sp = item.sellingPrice !== undefined ? item.sellingPrice : (item.price || 0);
+                const bp = item.buyingPrice !== undefined ? item.buyingPrice : sp;
+                const lineTotal = sp * item.qty;
+                const lineProfit = (sp - bp) * item.qty;
+
+                total += lineTotal;
+                totalProfit += lineProfit;
+
+                return {
+                    productId: item.productId,
+                    name: item.name,
+                    buyingPrice: bp,
+                    sellingPrice: sp,
+                    price: sp,
+                    qty: item.qty
+                };
+            });
+
+            // Update inventory stocks
+            finalItems.forEach(item => {
+                const prod = db.products.find(p => p.id === item.productId);
+                if (prod) {
+                    prod.stock = Math.max(0, prod.stock - item.qty);
+                }
+            });
+
+            if (selectedPaymentType === 'Credit') {
+                let customer = db.customers.find(c => c.name.toLowerCase() === custName.toLowerCase() || (c.phone && c.phone === custPhone));
+                if (customer) {
+                    customer.outstanding += total;
+                    if (custPhone && !customer.phone) customer.phone = custPhone;
+                } else {
+                    db.customers.push({
+                        id: 'CUST-' + Math.floor(100 + Math.random() * 900),
+                        name: custName,
+                        phone: custPhone,
+                        outstanding: total,
+                        emptyBottlesHeld: 0
+                    });
+                }
+            }
+
+            const newSale = {
+                id: 'SAL-' + Math.floor(1000 + Math.random() * 9000),
+                date: new Date().toISOString().replace('T', ' ').substring(0, 16),
+                customer: custName,
+                phone: custPhone,
+                cashier: currentUser.name,
+                userId: currentUser.id,
+                items: finalItems,
+                total: total,
+                totalProfit: totalProfit,
+                paymentType: selectedPaymentType,
+                status: selectedPaymentType === 'Credit' ? 'Unpaid / Credit' : 'Paid'
+            };
+
+            db.sales.unshift(newSale);
+            logActivity(currentUser.name, currentUser.id, `Logged ${selectedPaymentType} sale ${newSale.id} for ${custName} - Total: ₦${total.toLocaleString()}, Profit: ₦${totalProfit.toLocaleString()}`);
+            saveDatabase();
+
+            showToast(`Sale ${newSale.id} saved successfully! Profit: ₦${totalProfit.toLocaleString()}`, 'success');
+            cart = [];
+            document.getElementById('pos-customer-name').value = '';
+            document.getElementById('pos-customer-phone').value = '';
+            renderCart();
+            renderPOSProducts(db.products);
+        }
+
+        function getInventoryHTML() {
+            const totalStockUnits = db.products.reduce((acc, p) => acc + p.stock, 0);
+            const totalStockValue = db.products.reduce((acc, p) => acc + (p.stock * (p.sellingPrice || p.price || 0)), 0);
+            const totalStockCost = db.products.reduce((acc, p) => acc + (p.stock * (p.buyingPrice !== undefined ? p.buyingPrice : (p.price || 0))), 0);
+            const totalExpectedProfit = totalStockValue - totalStockCost;
+
+            return `
+                <div class="space-y-6">
+                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                        <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
+                            <p class="text-xs font-semibold text-slate-500 uppercase">Total Product Items</p>
+                            <h3 class="text-2xl font-bold text-slate-900 mt-1">${db.products.length} Products</h3>
+                        </div>
+                        <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
+                            <p class="text-xs font-semibold text-slate-500 uppercase">Physical Stock Units</p>
+                            <h3 class="text-2xl font-bold text-skyaccent-600 mt-1">${totalStockUnits.toLocaleString()} Units</h3>
+                        </div>
+                        <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
+                            <p class="text-xs font-semibold text-slate-500 uppercase">Inventory Value (Selling)</p>
+                            <h3 class="text-2xl font-bold text-emerald-600 mt-1">₦${totalStockValue.toLocaleString()}</h3>
+                        </div>
+                        <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
+                            <p class="text-xs font-semibold text-slate-500 uppercase">Total Stock Potential Profit</p>
+                            <h3 class="text-2xl font-bold ${totalExpectedProfit >= 0 ? 'text-brand-600' : 'text-red-600'} mt-1">
+                                ₦${totalExpectedProfit.toLocaleString()}
+                            </h3>
+                        </div>
+                    </div>
+
+                    <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm flex flex-col sm:flex-row items-center justify-between gap-4">
+                        <div>
+                            <h3 class="font-bold text-slate-800 text-base">Store Product Inventory</h3>
+                            <p class="text-xs text-slate-500 mt-0.5">Manage Buying Price, Selling Price, and track unit margins.</p>
+                        </div>
+                        ${currentUser.role === 'manager' ? `
+                            <button onclick="openAddProductModal()" class="px-4 py-2.5 bg-brand-600 hover:bg-brand-700 text-white font-semibold rounded-xl text-xs shadow transition flex items-center gap-2">
+                                <i class="fa-solid fa-plus"></i> Add New Product
+                            </button>
+                        ` : ''}
+                    </div>
+
+                    <div class="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-sm">
+                        <div class="overflow-x-auto">
+                            ${db.products.length === 0 ? `
+                                <div class="p-8 text-center text-xs text-slate-400">No products available in inventory. Click "Add New Product" to create inventory items.</div>
+                            ` : `
+                                <table class="w-full text-left text-xs whitespace-nowrap">
+                                    <thead>
+                                        <tr class="border-b text-slate-400 uppercase font-semibold bg-slate-50">
+                                            <th class="p-4">Product ID & Name</th>
+                                            <th class="p-4">Category</th>
+                                            <th class="p-4">Buying Price (₦)</th>
+                                            <th class="p-4">Selling Price (₦)</th>
+                                            <th class="p-4">Profit / Loss per Unit</th>
+                                            <th class="p-4">Stock Quantity</th>
+                                            <th class="p-4">Total Valuation (₦)</th>
+                                            <th class="p-4 text-right">Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody class="divide-y divide-slate-100">
+                                        ${db.products.map(p => {
+                                            const bPrice = p.buyingPrice !== undefined ? p.buyingPrice : (p.price || 0);
+                                            const sPrice = p.sellingPrice !== undefined ? p.sellingPrice : (p.price || 0);
+                                            const unitProfit = sPrice - bPrice;
+
+                                            return `
+                                                <tr class="hover:bg-brand-50/40">
+                                                    <td class="p-4 font-bold text-slate-800">${p.id}<br><span class="text-xs text-slate-600 font-normal">${p.name}</span></td>
+                                                    <td class="p-4"><span class="px-2 py-0.5 bg-brand-50 text-brand-700 rounded text-[10px] font-semibold">${p.category}</span></td>
+                                                    <td class="p-4 font-semibold text-slate-600">₦${bPrice.toLocaleString()}</td>
+                                                    <td class="p-4 font-bold text-slate-900">₦${sPrice.toLocaleString()}</td>
+                                                    <td class="p-4">
+                                                        <span class="px-2.5 py-1 rounded text-xs font-extrabold ${unitProfit > 0 ? 'bg-emerald-100 text-emerald-800' : unitProfit < 0 ? 'bg-red-100 text-red-800' : 'bg-slate-100 text-slate-700'}">
+                                                            ${unitProfit > 0 ? '+₦' + unitProfit.toLocaleString() + ' profit' : unitProfit < 0 ? '-₦' + Math.abs(unitProfit).toLocaleString() + ' loss' : 'No profit/no loss'}
+                                                        </span>
+                                                    </td>
+                                                    <td class="p-4">
+                                                        <span class="px-2 py-1 rounded text-xs font-bold ${p.stock > 10 ? 'bg-emerald-100 text-emerald-800' : 'bg-red-100 text-red-800'}">${p.stock} ${p.unit}</span>
+                                                    </td>
+                                                    <td class="p-4 font-bold text-slate-800">₦${(p.stock * sPrice).toLocaleString()}</td>
+                                                    <td class="p-4 text-right flex items-center justify-end gap-2">
+                                                        ${currentUser.role === 'manager' ? `
+                                                            <button onclick="openEditProductModal('${p.id}')" class="px-3 py-1.5 bg-slate-100 hover:bg-brand-50 text-slate-700 rounded-lg text-xs font-semibold" title="Edit Product">
+                                                                <i class="fa-solid fa-pen-to-square"></i> Edit Prices
+                                                            </button>
+                                                            <button onclick="openRestockModal('${p.id}')" class="px-3 py-1.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 rounded-lg text-xs font-semibold" title="Restock">
+                                                                <i class="fa-solid fa-boxes-stacked"></i> Restock
+                                                            </button>
+                                                        ` : `<span class="text-[10px] text-slate-400">View Only</span>`}
+                                                    </td>
+                                                </tr>
+                                            `;
+                                        }).join('')}
+                                    </tbody>
+                                </table>
+                            `}
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        function getEmptyBottlesHTML() {
+            const mainStoreEmptyBottles = db.inventory ? db.inventory.mainStoreEmptyBottles || 0 : 0;
+            const bottleDepositsTotal = db.inventory ? db.inventory.bottleDepositsTotal || 0 : 0;
+
+            return `
+                <div class="space-y-6">
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div class="bg-gradient-to-r from-skyaccent-600 to-skyaccent-500 text-white p-6 rounded-2xl shadow-lg">
+                            <span class="px-2.5 py-1 bg-white/20 rounded-lg text-[10px] uppercase font-bold tracking-wider">Main Store Shell Stock</span>
+                            <h3 class="text-3xl font-black mt-2">${mainStoreEmptyBottles.toLocaleString()} Shells</h3>
+                            <p class="text-xs text-skyaccent-100 mt-1">Empty glass bottles, crates & dispenser jars held in store.</p>
+                        </div>
+                        <div class="bg-gradient-to-r from-brand-700 to-brand-600 text-white p-6 rounded-2xl shadow-lg">
+                            <span class="px-2.5 py-1 bg-white/20 rounded-lg text-[10px] uppercase font-bold tracking-wider">Total Active Bottle Deposits</span>
+                            <h3 class="text-3xl font-black mt-2">₦${bottleDepositsTotal.toLocaleString()}</h3>
+                            <p class="text-xs text-brand-100 mt-1">Active customer deposit guarantees recorded.</p>
+                        </div>
+                    </div>
+
+                    <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm flex items-center justify-between">
+                        <div>
+                            <h3 class="font-bold text-slate-800 text-base">Empty Bottle Returns Log</h3>
+                            <p class="text-xs text-slate-500 mt-0.5">Track bottle returns from customers and drivers into store inventory.</p>
+                        </div>
+                        <button onclick="openRecordBottleReturnModal()" class="px-4 py-2.5 bg-skyaccent-600 hover:bg-skyaccent-700 text-white font-semibold rounded-xl text-xs shadow transition flex items-center gap-2">
+                            <i class="fa-solid fa-wine-bottle"></i> Record Return
+                        </button>
+                    </div>
+
+                    <div class="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-sm">
+                        <div class="overflow-x-auto">
+                            ${db.emptyBottleReturns.length === 0 ? `
+                                <div class="p-8 text-center text-xs text-slate-400">No bottle return records logged yet.</div>
+                            ` : `
+                                <table class="w-full text-left text-xs whitespace-nowrap">
+                                    <thead>
+                                        <tr class="border-b text-slate-400 uppercase font-semibold bg-slate-50">
+                                            <th class="p-4">ID & Date</th>
+                                            <th class="p-4">Customer Name</th>
+                                            <th class="p-4">Product Type</th>
+                                            <th class="p-4">Quantity Returned</th>
+                                            <th class="p-4">Receiver Staff ID</th>
+                                            <th class="p-4">Deposit Refunded</th>
+                                            <th class="p-4">Note</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody class="divide-y divide-slate-100">
+                                        ${db.emptyBottleReturns.map(br => `
+                                            <tr class="hover:bg-brand-50/40">
+                                                <td class="p-4 font-bold text-slate-800">${br.id}<br><span class="text-[10px] text-slate-400 font-normal">${br.date}</span></td>
+                                                <td class="p-4 font-semibold text-slate-800">${br.customerName}</td>
+                                                <td class="p-4 text-slate-700">${br.productType}</td>
+                                                <td class="p-4 font-bold text-skyaccent-600">${br.qty} units</td>
+                                                <td class="p-4 text-slate-600">${br.receiver}<br><span class="text-[10px] text-brand-700 font-mono">${br.userId || 'N/A'}</span></td>
+                                                <td class="p-4 font-bold text-slate-900">₦${(br.depositRefunded || 0).toLocaleString()}</td>
+                                                <td class="p-4 text-slate-500 italic">${br.note || 'None'}</td>
+                                            </tr>
+                                        `).join('')}
+                                    </tbody>
+                                </table>
+                            `}
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        function getDamagesHTML() {
+            const totalDamaged = db.damages.reduce((acc, dm) => acc + dm.qty, 0);
+
+            return `
+                <div class="space-y-6">
+                    <div class="bg-gradient-to-r from-red-800 to-rose-700 text-white p-6 rounded-2xl shadow-lg flex items-center justify-between">
+                        <div>
+                            <span class="px-2.5 py-1 bg-red-900/60 rounded-lg text-[10px] uppercase font-bold tracking-wider">Quality Control</span>
+                            <h3 class="text-3xl font-black mt-2">${totalDamaged.toLocaleString()} Damaged / Leaked Units</h3>
+                            <p class="text-xs text-red-100 mt-1">Logged products, burst sachets, and broken glass bottles.</p>
+                        </div>
+                        <button onclick="openRecordDamageModal()" class="px-4 py-3 bg-white text-red-700 font-bold rounded-xl text-xs shadow hover:bg-red-50 transition">
+                            <i class="fa-solid fa-plus mr-1"></i> Log Damage Record
+                        </button>
+                    </div>
+
+                    <div class="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-sm">
+                        <div class="overflow-x-auto">
+                            ${db.damages.length === 0 ? `
+                                <div class="p-8 text-center text-xs text-slate-400">No damage or leakage records logged yet.</div>
+                            ` : `
+                                <table class="w-full text-left text-xs whitespace-nowrap">
+                                    <thead>
+                                        <tr class="border-b text-slate-400 uppercase font-semibold bg-slate-50">
+                                            <th class="p-4">Report ID & Date</th>
+                                            <th class="p-4">Product Name</th>
+                                            <th class="p-4">Quantity</th>
+                                            <th class="p-4">Reason</th>
+                                            <th class="p-4">Reported By</th>
+                                            <th class="p-4">Note</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody class="divide-y divide-slate-100">
+                                        ${db.damages.map(dm => `
+                                            <tr class="hover:bg-brand-50/40">
+                                                <td class="p-4 font-bold text-slate-800">${dm.id}<br><span class="text-[10px] text-slate-400 font-normal">${dm.date}</span></td>
+                                                <td class="p-4 font-semibold text-slate-900">${dm.productName}</td>
+                                                <td class="p-4 font-bold text-red-600">${dm.qty} units</td>
+                                                <td class="p-4"><span class="px-2 py-0.5 bg-red-50 text-red-700 rounded text-[10px] font-semibold">${dm.reason}</span></td>
+                                                <td class="p-4 text-slate-600">${dm.reportedBy}<br><span class="text-[10px] text-brand-700 font-mono">${dm.userId || 'N/A'}</span></td>
+                                                <td class="p-4 text-slate-500">${dm.note}</td>
+                                            </tr>
+                                        `).join('')}
+                                    </tbody>
+                                </table>
+                            `}
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        function getDispatchesHTML() {
+            const isDriver = currentUser.role === 'driver';
+            const dispatchesList = isDriver 
+                ? db.dispatches.filter(d => d.driver.toLowerCase() === currentUser.name.toLowerCase() || d.userId === currentUser.id) 
+                : db.dispatches;
+
+            return `
+                <div class="space-y-6">
+                    <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm flex flex-col sm:flex-row items-center justify-between gap-4">
+                        <div>
+                            <h3 class="font-bold text-slate-800 text-base">Driver Dispatches & Inventory Tracking</h3>
+                            <p class="text-xs text-slate-500 mt-0.5">Track products loaded onto vehicles, bottle collections, and store returns.</p>
+                        </div>
+                        ${currentUser.role === 'manager' || currentUser.role === 'staff' ? `
+                            <button onclick="openCreateDispatchModal()" class="px-4 py-2.5 bg-brand-600 hover:bg-brand-700 text-white font-semibold rounded-xl text-xs shadow transition flex items-center gap-2">
+                                <i class="fa-solid fa-truck-fast"></i> Create Dispatch Order
+                            </button>
+                        ` : ''}
+                    </div>
+
+                    <div class="space-y-4">
+                        ${dispatchesList.length === 0 ? `
+                            <div class="bg-white p-8 rounded-2xl text-center text-xs text-slate-400 border">No dispatch orders assigned.</div>
+                        ` : dispatchesList.map(d => `
+                            <div class="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm space-y-4">
+                                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b pb-4">
+                                    <div>
+                                        <div class="flex items-center gap-2">
+                                            <h4 class="font-bold text-slate-900 text-base">${d.id}</h4>
+                                            <span class="px-2 py-0.5 rounded text-[10px] font-bold ${d.status.includes('Completed') ? 'bg-emerald-100 text-emerald-800' : 'bg-amber-100 text-amber-800'}">${d.status}</span>
+                                        </div>
+                                        <p class="text-xs text-slate-500 mt-0.5">Assigned Driver: <span class="font-semibold text-slate-800">${d.driver}</span> (<span class="font-mono text-brand-700">${d.userId || 'DRV'}</span>) | Date: ${d.date}</p>
+                                    </div>
+                                    ${!d.status.includes('Completed') ? `
+                                        <button onclick="openDriverReturnModal('${d.id}')" class="px-4 py-2 bg-skyaccent-600 hover:bg-skyaccent-700 text-white font-semibold rounded-xl text-xs shadow flex items-center gap-1.5">
+                                            <i class="fa-solid fa-rotate-left"></i> Log Return & Complete Dispatch
+                                        </button>
+                                    ` : ''}
+                                </div>
+
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
+                                    <div>
+                                        <p class="font-semibold text-slate-500 uppercase mb-2">Dispatched Items:</p>
+                                        <ul class="space-y-1 bg-slate-50 p-3 rounded-xl border">
+                                            ${d.items.map(i => `<li class="flex justify-between font-medium text-slate-800"><span>${i.name}</span><span class="font-bold text-brand-600">${i.qty} units</span></li>`).join('')}
+                                        </ul>
+                                    </div>
+                                    <div class="grid grid-cols-2 gap-3">
+                                        <div class="bg-brand-50 p-3 rounded-xl border border-brand-100 flex flex-col justify-center">
+                                            <p class="text-[10px] font-bold text-brand-700 uppercase">Bottles Collected</p>
+                                            <p class="text-xl font-extrabold text-brand-900 mt-1">${d.bottlesCollected || 0}</p>
+                                        </div>
+                                        <div class="bg-emerald-50 p-3 rounded-xl border border-emerald-100 flex flex-col justify-center">
+                                            <p class="text-[10px] font-bold text-emerald-700 uppercase">Returned to Store</p>
+                                            <p class="text-xl font-extrabold text-emerald-900 mt-1">${d.bottlesReturnedToStore || 0}</p>
+                                        </div>
+                                        <div class="bg-amber-50 p-3 rounded-xl border border-amber-100 flex flex-col justify-center">
+                                            <p class="text-[10px] font-bold text-amber-700 uppercase">With Driver</p>
+                                            <p class="text-xl font-extrabold text-amber-900 mt-1">${d.bottlesWithDriver || 0}</p>
+                                        </div>
+                                        <div class="bg-red-50 p-3 rounded-xl border border-red-100 flex flex-col justify-center">
+                                            <p class="text-[10px] font-bold text-red-700 uppercase">Shortage / Damaged</p>
+                                            <p class="text-xl font-extrabold text-red-900 mt-1">${d.shortage || 0}</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
+            `;
+        }
+
+        function getCustomersHTML() {
+            const totalCredit = db.customers.reduce((acc, c) => acc + (c.outstanding || 0), 0);
+
+            return `
+                <div class="space-y-6">
+                    <div class="bg-gradient-to-r from-amber-700 to-amber-600 text-white p-6 rounded-2xl shadow-lg flex items-center justify-between">
+                        <div>
+                            <span class="px-2.5 py-1 bg-amber-900/60 rounded-lg text-[10px] uppercase font-bold tracking-wider">Customer Debt Management</span>
+                            <h3 class="text-3xl font-black mt-2">₦${totalCredit.toLocaleString()} Outstanding Debt</h3>
+                            <p class="text-xs text-amber-100 mt-1">Track customer balances, credit repayments, and bottle holdings.</p>
+                        </div>
+                        <button onclick="openAddCustomerModal()" class="px-4 py-3 bg-white text-amber-800 font-bold rounded-xl text-xs shadow hover:bg-amber-50 transition">
+                            <i class="fa-solid fa-user-plus mr-1"></i> Add Customer
+                        </button>
+                    </div>
+
+                    <div class="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-sm">
+                        <div class="overflow-x-auto">
+                            ${db.customers.length === 0 ? `
+                                <div class="p-8 text-center text-xs text-slate-400">No registered customer accounts yet. Click "Add Customer" to create customer profiles.</div>
+                            ` : `
+                                <table class="w-full text-left text-xs whitespace-nowrap">
+                                    <thead>
+                                        <tr class="border-b text-slate-400 uppercase font-semibold bg-slate-50">
+                                            <th class="p-4">Customer Name & Phone</th>
+                                            <th class="p-4">Outstanding Debt (₦)</th>
+                                            <th class="p-4">Empty Bottles Held</th>
+                                            <th class="p-4 text-right">Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody class="divide-y divide-slate-100">
+                                        ${db.customers.map(c => `
+                                            <tr class="hover:bg-brand-50/40">
+                                                <td class="p-4 font-bold text-slate-900">${c.name}<br><span class="text-xs text-slate-500 font-normal">${c.phone || 'No phone recorded'}</span></td>
+                                                <td class="p-4 font-bold ${c.outstanding > 0 ? 'text-red-600' : 'text-emerald-600'}">₦${c.outstanding.toLocaleString()}</td>
+                                                <td class="p-4 font-semibold text-skyaccent-600">${c.emptyBottlesHeld || 0} units</td>
+                                                <td class="p-4 text-right flex items-center justify-end gap-2">
+                                                    <button onclick="openSettleCreditModal('${c.id}')" class="px-3 py-1.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 rounded-lg text-xs font-semibold">
+                                                        Settle Payment
+                                                    </button>
+                                                    <button onclick="openEditCustomerModal('${c.id}')" class="px-3 py-1.5 bg-slate-100 hover:bg-brand-50 text-slate-700 rounded-lg text-xs font-semibold">
+                                                        Edit
+                                                    </button>
+                                                </td>
+                                            </tr>
+                                        `).join('')}
+                                    </tbody>
+                                </table>
+                            `}
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        function getExpensesHTML() {
+            const totalExpenses = db.expenses.reduce((acc, e) => acc + (e.amount || 0), 0);
+
+            return `
+                <div class="space-y-6">
+                    <div class="bg-gradient-to-r from-red-800 to-rose-700 text-white p-6 rounded-2xl shadow-lg flex flex-col sm:flex-row items-center justify-between gap-4">
+                        <div>
+                            <span class="px-2.5 py-1 bg-red-900/60 rounded-lg text-[10px] uppercase font-bold tracking-wider">Financial Expense Ledger</span>
+                            <h3 class="text-2xl sm:text-3xl font-extrabold mt-1">TOTAL EXPENSES</h3>
+                            <p class="text-xs text-red-100 mt-1">Calculates dynamically from valid expense entries.</p>
+                        </div>
+                        <div class="text-2xl sm:text-4xl font-black bg-white/10 px-6 py-3 rounded-xl backdrop-blur-sm border border-white/20">
+                            ₦${totalExpenses.toLocaleString()}
+                        </div>
+                    </div>
+
+                    <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                        <div>
+                            <h4 class="font-bold text-slate-800 text-base">Operating Expenses</h4>
+                            <p class="text-xs text-slate-500 mt-0.5">Add, edit, or delete expenses with real-time financial updates.</p>
+                        </div>
+                        ${currentUser.role === 'manager' ? `
+                            <button onclick="openAddExpenseModal()" class="px-4 py-2.5 bg-red-600 hover:bg-red-700 text-white font-semibold rounded-xl text-xs shadow transition flex items-center justify-center gap-2">
+                                <i class="fa-solid fa-plus"></i> Add Expense Entry
+                            </button>
+                        ` : ''}
+                    </div>
+
+                    <div class="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-sm">
+                        <div class="overflow-x-auto">
+                            ${db.expenses.length === 0 ? `
+                                <div class="p-8 text-center text-xs text-slate-400">No expense records logged yet. Click "Add Expense Entry" to record operational costs.</div>
+                            ` : `
+                                <table class="w-full text-left text-xs whitespace-nowrap">
+                                    <thead>
+                                        <tr class="border-b text-slate-400 uppercase font-semibold bg-slate-50">
+                                            <th class="p-4">Date & Ref</th>
+                                            <th class="p-4">Category</th>
+                                            <th class="p-4">Description</th>
+                                            <th class="p-4">Amount (₦)</th>
+                                            <th class="p-4">Recorded By</th>
+                                            <th class="p-4 text-right">Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody class="divide-y divide-slate-100">
+                                        ${db.expenses.map(e => `
+                                            <tr class="hover:bg-brand-50/40">
+                                                <td class="p-4 font-bold text-slate-800">${e.id}<br><span class="text-[10px] text-slate-400 font-normal">${e.date}</span></td>
+                                                <td class="p-4"><span class="px-2 py-0.5 bg-red-50 text-red-700 rounded text-[10px] font-semibold">${e.category}</span></td>
+                                                <td class="p-4 text-slate-700">${e.description}</td>
+                                                <td class="p-4 font-bold text-red-600">₦${(e.amount || 0).toLocaleString()}</td>
+                                                <td class="p-4 text-slate-600">${e.recordedBy}<br><span class="text-[10px] text-brand-700 font-mono">${e.userId || 'N/A'}</span></td>
+                                                <td class="p-4 text-right flex items-center justify-end gap-1">
+                                                    ${currentUser.role === 'manager' ? `
+                                                        <button onclick="openEditExpenseModal('${e.id}')" class="px-2 py-1 bg-slate-100 hover:bg-brand-50 text-slate-700 rounded text-xs font-semibold" title="Edit">
+                                                            <i class="fa-solid fa-pen-to-square"></i>
+                                                        </button>
+                                                        <button onclick="openDeleteExpenseModal('${e.id}')" class="px-2 py-1 bg-red-50 hover:bg-red-100 text-red-600 rounded text-xs font-semibold" title="Delete">
+                                                            <i class="fa-solid fa-trash-can"></i>
+                                                        </button>
+                                                    ` : `<span class="text-[10px] text-slate-400">View Only</span>`}
+                                                </td>
+                                            </tr>
+                                        `).join('')}
+                                    </tbody>
+                                </table>
+                            `}
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        function getReportsHTML() {
+            const totalRevenue = db.sales.reduce((acc, s) => acc + s.total, 0);
+            
+            let totalSalesCost = 0;
+            let totalSalesProfit = 0;
+
+            db.sales.forEach(s => {
+                if (s.totalProfit !== undefined) {
+                    totalSalesProfit += s.totalProfit;
+                } else if (Array.isArray(s.items)) {
+                    s.items.forEach(it => {
+                        const bp = it.buyingPrice !== undefined ? it.buyingPrice : (it.sellingPrice || it.price || 0);
+                        const sp = it.sellingPrice !== undefined ? it.sellingPrice : (it.price || 0);
+                        totalSalesProfit += (sp - bp) * it.qty;
+                    });
+                }
+            });
+            totalSalesCost = totalRevenue - totalSalesProfit;
+
+            const totalExpenses = db.expenses.reduce((acc, e) => acc + (e.amount || 0), 0);
+            const netProfit = totalSalesProfit - totalExpenses;
+
+            return `
+                <div class="space-y-6">
+                    <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm flex flex-col sm:flex-row items-center justify-between gap-4">
+                        <div>
+                            <h3 class="font-bold text-slate-800 text-base">Comprehensive Financial & Profit/Loss Report</h3>
+                            <p class="text-xs text-slate-500 mt-0.5">Export data or perform system database backup and restores.</p>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <button onclick="exportDatabaseJSON()" class="px-3 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-semibold shadow flex items-center gap-1.5">
+                                <i class="fa-solid fa-download"></i> Backup DB
+                            </button>
+                            <label class="px-3 py-2 bg-skyaccent-600 hover:bg-skyaccent-700 text-white rounded-xl text-xs font-semibold shadow cursor-pointer flex items-center gap-1.5">
+                                <i class="fa-solid fa-upload"></i> Restore DB
+                                <input type="file" accept=".json" onchange="importDatabaseJSON(event)" class="hidden">
+                            </label>
+                            <button onclick="resetToCleanState()" class="px-3 py-2 bg-red-600 hover:bg-red-700 text-white rounded-xl text-xs font-semibold shadow flex items-center gap-1.5">
+                                <i class="fa-solid fa-arrow-rotate-left"></i> Clean Reset
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                        <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
+                            <p class="text-xs font-semibold text-slate-500 uppercase">Gross Sales Revenue</p>
+                            <h3 class="text-2xl font-bold text-slate-900 mt-1">₦${totalRevenue.toLocaleString()}</h3>
+                        </div>
+                        <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
+                            <p class="text-xs font-semibold text-slate-500 uppercase">Cost of Goods Sold (COGS)</p>
+                            <h3 class="text-2xl font-bold text-amber-600 mt-1">₦${totalSalesCost.toLocaleString()}</h3>
+                        </div>
+                        <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
+                            <p class="text-xs font-semibold text-slate-500 uppercase">Gross Profit / Loss</p>
+                            <h3 class="text-2xl font-bold ${totalSalesProfit >= 0 ? 'text-emerald-600' : 'text-red-600'} mt-1">
+                                ${totalSalesProfit >= 0 ? '₦' + totalSalesProfit.toLocaleString() : '-₦' + Math.abs(totalSalesProfit).toLocaleString()}
+                            </h3>
+                        </div>
+                        <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
+                            <p class="text-xs font-semibold text-slate-500 uppercase">Net Income / Profit</p>
+                            <h3 class="text-2xl font-bold ${netProfit >= 0 ? 'text-brand-600' : 'text-red-600'} mt-1">
+                                ${netProfit >= 0 ? '₦' + netProfit.toLocaleString() : '-₦' + Math.abs(netProfit).toLocaleString()}
+                            </h3>
+                        </div>
+                    </div>
+
+                    <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm space-y-4">
+                        <h4 class="font-bold text-slate-800 text-sm">Historical Profit Breakdown by Product</h4>
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-left text-xs whitespace-nowrap">
+                                <thead>
+                                    <tr class="border-b text-slate-400 uppercase font-semibold bg-slate-50">
+                                        <th class="p-3">Product Name</th>
+                                        <th class="p-3">Units Sold</th>
+                                        <th class="p-3">Current Buying Price</th>
+                                        <th class="p-3">Current Selling Price</th>
+                                        <th class="p-3">Total Generated Revenue</th>
+                                        <th class="p-3">Calculated Sales Profit</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="divide-y divide-slate-100">
+                                    ${db.products.map(p => {
+                                        let unitsSold = 0;
+                                        let rev = 0;
+                                        let prof = 0;
+
+                                        db.sales.forEach(s => {
+                                            if (Array.isArray(s.items)) {
+                                                s.items.forEach(it => {
+                                                    if (it.productId === p.id) {
+                                                        unitsSold += it.qty;
+                                                        const sp = it.sellingPrice !== undefined ? it.sellingPrice : (it.price || 0);
+                                                        const bp = it.buyingPrice !== undefined ? it.buyingPrice : sp;
+                                                        rev += sp * it.qty;
+                                                        prof += (sp - bp) * it.qty;
+                                                    }
+                                                });
+                                            }
+                                        });
+
+                                        const curBp = p.buyingPrice !== undefined ? p.buyingPrice : (p.price || 0);
+                                        const curSp = p.sellingPrice !== undefined ? p.sellingPrice : (p.price || 0);
+
+                                        return `
+                                            <tr class="hover:bg-brand-50/30">
+                                                <td class="p-3 font-bold text-slate-800">${p.name}</td>
+                                                <td class="p-3 font-semibold text-slate-700">${unitsSold} ${p.unit}</td>
+                                                <td class="p-3 text-slate-600">₦${curBp.toLocaleString()}</td>
+                                                <td class="p-3 text-slate-900 font-bold">₦${curSp.toLocaleString()}</td>
+                                                <td class="p-3 font-bold text-slate-900">₦${rev.toLocaleString()}</td>
+                                                <td class="p-3 font-bold ${prof >= 0 ? 'text-emerald-600' : 'text-red-600'}">
+                                                    ${prof >= 0 ? '₦' + prof.toLocaleString() : '-₦' + Math.abs(prof).toLocaleString()}
+                                                </td>
+                                            </tr>
+                                        `;
+                                    }).join('')}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        function getUsersHTML() {
+            return `
+                <div class="space-y-6">
+                    <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm flex items-center justify-between">
+                        <div>
+                            <h3 class="font-bold text-slate-800 text-base">Permanent Staff & Manager Accounts</h3>
+                            <p class="text-xs text-slate-500 mt-0.5">Manage user access roles and active credentials.</p>
+                        </div>
+                        <button onclick="openAddUserModal()" class="px-4 py-2.5 bg-brand-600 hover:bg-brand-700 text-white font-semibold rounded-xl text-xs shadow flex items-center gap-2">
+                            <i class="fa-solid fa-user-plus"></i> Add Staff User
+                        </button>
+                    </div>
+
+                    <div class="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-sm">
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-left text-xs whitespace-nowrap">
+                                <thead>
+                                    <tr class="border-b text-slate-400 uppercase font-semibold bg-slate-50">
+                                        <th class="p-4">User ID & Name</th>
+                                        <th class="p-4">Email</th>
+                                        <th class="p-4">Role</th>
+                                        <th class="p-4">Status</th>
+                                        <th class="p-4 text-right">Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="divide-y divide-slate-100">
+                                    ${db.users.map(u => `
+                                        <tr class="hover:bg-brand-50/40">
+                                            <td class="p-4 font-bold text-slate-900">${u.name}<br><span class="text-[10px] text-brand-700 font-mono">${u.id}</span></td>
+                                            <td class="p-4 text-slate-600">${u.email}</td>
+                                            <td class="p-4"><span class="px-2 py-0.5 rounded text-[10px] font-extrabold uppercase ${u.role === 'manager' ? 'bg-brand-100 text-brand-800' : 'bg-slate-100 text-slate-700'}">${u.role}</span></td>
+                                            <td class="p-4"><span class="px-2 py-0.5 rounded text-[10px] font-bold ${u.status === 'active' ? 'bg-emerald-100 text-emerald-800' : 'bg-red-100 text-red-800'}">${u.status}</span></td>
+                                            <td class="p-4 text-right">
+                                                <button onclick="openEditUserModal('${u.id}')" class="px-3 py-1.5 bg-slate-100 hover:bg-brand-50 text-slate-700 rounded-lg text-xs font-semibold">
+                                                    Edit Account
+                                                </button>
+                                            </td>
+                                        </tr>
+                                    `).join('')}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        function getAuditLogsHTML() {
+            return `
+                <div class="space-y-6">
+                    <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
+                        <h3 class="font-bold text-slate-800 text-base">System Activity Audit Logs</h3>
+                        <p class="text-xs text-slate-500 mt-0.5">Immutable record of logins, transactions, pricing edits, and system events.</p>
+                    </div>
+
+                    <div class="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-sm">
+                        <div class="overflow-x-auto">
+                            ${db.auditLogs.length === 0 ? `
+                                <div class="p-8 text-center text-xs text-slate-400">No activity logs recorded.</div>
+                            ` : `
+                                <table class="w-full text-left text-xs whitespace-nowrap">
+                                    <thead>
+                                        <tr class="border-b text-slate-400 uppercase font-semibold bg-slate-50">
+                                            <th class="p-4">Timestamp</th>
+                                            <th class="p-4">User</th>
+                                            <th class="p-4">Action Performed</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody class="divide-y divide-slate-100">
+                                        ${db.auditLogs.map(log => `
+                                            <tr class="hover:bg-brand-50/40">
+                                                <td class="p-4 font-mono text-[11px] text-slate-500">${log.date}</td>
+                                                <td class="p-4 font-bold text-slate-800">${log.user}<br><span class="text-[10px] font-mono text-brand-700">${log.userId || ''}</span></td>
+                                                <td class="p-4 text-slate-800">${log.action}</td>
+                                            </tr>
+                                        `).join('')}
+                                    </tbody>
+                                </table>
+                            `}
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        function openAddProductModal() {
+            showModal('Add New Product', `
+                <form onsubmit="saveAddProduct(event)" class="space-y-4">
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-600 mb-1">Product Name</label>
+                        <input type="text" id="add-prod-name" required placeholder="e.g. 75cl Bottled Water (Pack of 12)" class="w-full px-3 py-2 border rounded-xl text-xs focus:ring-2 focus:ring-brand-500 outline-none">
+                    </div>
+                    <div class="grid grid-cols-2 gap-3">
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-600 mb-1">Category</label>
+                            <input type="text" id="add-prod-category" required placeholder="e.g. Bottled Water" class="w-full px-3 py-2 border rounded-xl text-xs focus:ring-2 focus:ring-brand-500 outline-none">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-600 mb-1">Packaging Unit</label>
+                            <input type="text" id="add-prod-unit" required placeholder="e.g. Packs / Bags / Jars" class="w-full px-3 py-2 border rounded-xl text-xs focus:ring-2 focus:ring-brand-500 outline-none">
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-2 gap-3 bg-slate-50 p-3 rounded-xl border border-slate-200">
+                        <div>
+                            <label class="block text-xs font-bold text-slate-700 mb-1">Buying Price (₦)</label>
+                            <input type="number" id="add-prod-buying-price" min="0" step="0.01" required placeholder="e.g. 1000" oninput="calculateModalProfit('add')" class="w-full px-3 py-2 border rounded-xl text-xs focus:ring-2 focus:ring-brand-500 outline-none bg-white">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-slate-700 mb-1">Selling Price (₦)</label>
+                            <input type="number" id="add-prod-selling-price" min="0" step="0.01" required placeholder="e.g. 1200" oninput="calculateModalProfit('add')" class="w-full px-3 py-2 border rounded-xl text-xs focus:ring-2 focus:ring-brand-500 outline-none bg-white">
+                        </div>
+                        <div class="col-span-2 text-xs font-bold pt-1 text-slate-700 flex justify-between border-t border-slate-200">
+                            <span>Calculated Unit Margin:</span>
+                            <span id="add-prod-profit-preview" class="text-emerald-600">₦0</span>
+                        </div>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-600 mb-1">Initial Physical Stock Quantity</label>
+                        <input type="number" id="add-prod-stock" min="0" required placeholder="e.g. 100" class="w-full px-3 py-2 border rounded-xl text-xs focus:ring-2 focus:ring-brand-500 outline-none">
+                    </div>
+                    <div class="flex justify-end gap-2 pt-2 border-t">
+                        <button type="button" onclick="closeModal()" class="px-4 py-2 border rounded-xl text-xs font-semibold text-slate-600 hover:bg-slate-100">Cancel</button>
+                        <button type="submit" class="px-4 py-2 bg-brand-600 hover:bg-brand-700 text-white rounded-xl text-xs font-semibold shadow">Save Product</button>
+                    </div>
+                </form>
+            `);
+        }
+
+        function calculateModalProfit(prefix) {
+            const buying = parseFloat(document.getElementById(`${prefix}-prod-buying-price`).value) || 0;
+            const selling = parseFloat(document.getElementById(`${prefix}-prod-selling-price`).value) || 0;
+            const diff = selling - buying;
+            const previewEl = document.getElementById(`${prefix}-prod-profit-preview`);
+            if (previewEl) {
+                if (diff > 0) {
+                    previewEl.textContent = `+₦${diff.toLocaleString()} profit`;
+                    previewEl.className = 'text-emerald-600 font-extrabold';
+                } else if (diff < 0) {
+                    previewEl.textContent = `-₦${Math.abs(diff).toLocaleString()} loss`;
+                    previewEl.className = 'text-red-600 font-extrabold';
+                } else {
+                    previewEl.textContent = 'No profit/no loss';
+                    previewEl.className = 'text-slate-600 font-bold';
+                }
+            }
+        }
+
+        function saveAddProduct(e) {
+            e.preventDefault();
+            const name = document.getElementById('add-prod-name').value.trim();
+            const category = document.getElementById('add-prod-category').value.trim();
+            const unit = document.getElementById('add-prod-unit').value.trim();
+            const buyingPrice = parseFloat(document.getElementById('add-prod-buying-price').value) || 0;
+            const sellingPrice = parseFloat(document.getElementById('add-prod-selling-price').value) || 0;
+            const stock = parseInt(document.getElementById('add-prod-stock').value) || 0;
+
+            const newProd = {
+                id: 'PRD-' + Math.floor(100 + Math.random() * 900),
+                name: name,
+                category: category,
+                buyingPrice: buyingPrice,
+                sellingPrice: sellingPrice,
+                price: sellingPrice, // Maintained for legacy compatibility
+                stock: stock,
+                unit: unit
+            };
+
+            db.products.push(newProd);
+            logActivity(currentUser.name, currentUser.id, `Created new product ${newProd.name} (Buying: ₦${buyingPrice}, Selling: ₦${sellingPrice})`);
+            saveDatabase();
+            closeModal();
+            showToast(`Product ${name} added successfully!`, 'success');
+            renderTabContent();
+        }
+
+        function openEditProductModal(productId) {
+            const p = db.products.find(prod => prod.id === productId);
+            if (!p) return;
+
+            const bPrice = p.buyingPrice !== undefined ? p.buyingPrice : (p.price || 0);
+            const sPrice = p.sellingPrice !== undefined ? p.sellingPrice : (p.price || 0);
+
+            showModal(`Edit Product: ${p.name}`, `
+                <form onsubmit="saveEditProduct(event, '${p.id}')" class="space-y-4">
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-600 mb-1">Product Name</label>
+                        <input type="text" id="edit-prod-name" value="${p.name}" required class="w-full px-3 py-2 border rounded-xl text-xs focus:ring-2 focus:ring-brand-500 outline-none">
+                    </div>
+                    <div class="grid grid-cols-2 gap-3">
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-600 mb-1">Category</label>
+                            <input type="text" id="edit-prod-category" value="${p.category}" required class="w-full px-3 py-2 border rounded-xl text-xs focus:ring-2 focus:ring-brand-500 outline-none">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-600 mb-1">Unit</label>
+                            <input type="text" id="edit-prod-unit" value="${p.unit}" required class="w-full px-3 py-2 border rounded-xl text-xs focus:ring-2 focus:ring-brand-500 outline-none">
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-2 gap-3 bg-slate-50 p-3 rounded-xl border border-slate-200">
+                        <div>
+                            <label class="block text-xs font-bold text-slate-700 mb-1">Buying Price (₦)</label>
+                            <input type="number" id="edit-prod-buying-price" value="${bPrice}" min="0" step="0.01" required oninput="calculateModalProfit('edit')" class="w-full px-3 py-2 border rounded-xl text-xs focus:ring-2 focus:ring-brand-500 outline-none bg-white">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-slate-700 mb-1">Selling Price (₦)</label>
+                            <input type="number" id="edit-prod-selling-price" value="${sPrice}" min="0" step="0.01" required oninput="calculateModalProfit('edit')" class="w-full px-3 py-2 border rounded-xl text-xs focus:ring-2 focus:ring-brand-500 outline-none bg-white">
+                        </div>
+                        <div class="col-span-2 text-xs font-bold pt-1 text-slate-700 flex justify-between border-t border-slate-200">
+                            <span>Calculated Unit Margin:</span>
+                            <span id="edit-prod-profit-preview" class="${sPrice - bPrice >= 0 ? 'text-emerald-600' : 'text-red-600'}">
+                                ${sPrice - bPrice > 0 ? '+₦' + (sPrice - bPrice).toLocaleString() + ' profit' : sPrice - bPrice < 0 ? '-₦' + Math.abs(sPrice - bPrice).toLocaleString() + ' loss' : 'No profit/no loss'}
+                            </span>
+                        </div>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-600 mb-1">Current Stock Quantity</label>
+                        <input type="number" id="edit-prod-stock" value="${p.stock}" min="0" required class="w-full px-3 py-2 border rounded-xl text-xs focus:ring-2 focus:ring-brand-500 outline-none">
+                    </div>
+                    <div class="flex justify-end gap-2 pt-2 border-t">
+                        <button type="button" onclick="closeModal()" class="px-4 py-2 border rounded-xl text-xs font-semibold text-slate-600 hover:bg-slate-100">Cancel</button>
+                        <button type="submit" class="px-4 py-2 bg-brand-600 hover:bg-brand-700 text-white rounded-xl text-xs font-semibold shadow">Save Changes</button>
+                    </div>
+                </form>
+            `);
+        }
+
+        function saveEditProduct(e, productId) {
+            e.preventDefault();
+            const p = db.products.find(prod => prod.id === productId);
+            if (!p) return;
+
+            const name = document.getElementById('edit-prod-name').value.trim();
+            const category = document.getElementById('edit-prod-category').value.trim();
+            const unit = document.getElementById('edit-prod-unit').value.trim();
+            const buyingPrice = parseFloat(document.getElementById('edit-prod-buying-price').value) || 0;
+            const sellingPrice = parseFloat(document.getElementById('edit-prod-selling-price').value) || 0;
+            const stock = parseInt(document.getElementById('edit-prod-stock').value) || 0;
+
+            p.name = name;
+            p.category = category;
+            p.unit = unit;
+            p.buyingPrice = buyingPrice;
+            p.sellingPrice = sellingPrice;
+            p.price = sellingPrice; // Keep legacy field in sync
+            p.stock = stock;
+
+            logActivity(currentUser.name, currentUser.id, `Updated product ${p.name} prices: Buying ₦${buyingPrice}, Selling ₦${sellingPrice}`);
+            saveDatabase();
+            closeModal();
+            showToast(`Product ${p.name} updated!`, 'success');
+            renderTabContent();
+        }
+
+        function openRestockModal(productId) {
+            const p = db.products.find(prod => prod.id === productId);
+            if (!p) return;
+
+            showModal(`Restock Inventory: ${p.name}`, `
+                <form onsubmit="saveRestock(event, '${p.id}')" class="space-y-4">
+                    <p class="text-xs text-slate-600">Current Stock: <span class="font-bold text-slate-900">${p.stock} ${p.unit}</span></p>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-600 mb-1">Additional Units Received</label>
+                        <input type="number" id="restock-qty" min="1" required placeholder="e.g. 50" class="w-full px-3 py-2 border rounded-xl text-xs focus:ring-2 focus:ring-brand-500 outline-none">
+                    </div>
+                    <div class="flex justify-end gap-2 pt-2 border-t">
+                        <button type="button" onclick="closeModal()" class="px-4 py-2 border rounded-xl text-xs font-semibold text-slate-600 hover:bg-slate-100">Cancel</button>
+                        <button type="submit" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-semibold shadow">Add Stock</button>
+                    </div>
+                </form>
+            `);
+        }
+
+        function saveRestock(e, productId) {
+            e.preventDefault();
+            const p = db.products.find(prod => prod.id === productId);
+            if (!p) return;
+            const qty = parseInt(document.getElementById('restock-qty').value) || 0;
+            p.stock += qty;
+
+            logActivity(currentUser.name, currentUser.id, `Restocked ${qty} units of ${p.name}. New total: ${p.stock}`);
+            saveDatabase();
+            closeModal();
+            showToast(`Added ${qty} units to ${p.name}`, 'success');
+            renderTabContent();
+        }
+
+        function openRecordDamageModal() {
+            showModal('Log Damaged / Leaked Product', `
+                <form onsubmit="saveRecordDamage(event)" class="space-y-4">
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-600 mb-1">Select Product</label>
+                        <select id="dmg-prod-id" required class="w-full px-3 py-2 border rounded-xl text-xs focus:ring-2 focus:ring-brand-500 outline-none bg-white">
+                            ${db.products.map(p => `<option value="${p.id}">${p.name} (${p.stock} available)</option>`).join('')}
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-600 mb-1">Quantity Damaged</label>
+                        <input type="number" id="dmg-qty" min="1" required placeholder="e.g. 2" class="w-full px-3 py-2 border rounded-xl text-xs focus:ring-2 focus:ring-brand-500 outline-none">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-600 mb-1">Reason / Cause</label>
+                        <select id="dmg-reason" required class="w-full px-3 py-2 border rounded-xl text-xs focus:ring-2 focus:ring-brand-500 outline-none bg-white">
+                            <option value="Sachet Burst / Leakage">Sachet Burst / Leakage</option>
+                            <option value="Broken Bottle / Jar">Broken Glass Bottle / Dispenser Jar</option>
+                            <option value="Expired / Contaminated">Expired / Contaminated</option>
+                            <option value="In-Transit Damage">In-Transit Transit Damage</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-600 mb-1">Additional Notes</label>
+                        <input type="text" id="dmg-note" placeholder="Optional brief explanation" class="w-full px-3 py-2 border rounded-xl text-xs focus:ring-2 focus:ring-brand-500 outline-none">
+                    </div>
+                    <div class="flex justify-end gap-2 pt-2 border-t">
+                        <button type="button" onclick="closeModal()" class="px-4 py-2 border rounded-xl text-xs font-semibold text-slate-600 hover:bg-slate-100">Cancel</button>
+                        <button type="submit" class="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-xl text-xs font-semibold shadow">Log Damage</button>
+                    </div>
+                </form>
+            `);
+        }
+
+        function saveRecordDamage(e) {
+            e.preventDefault();
+            const prodId = document.getElementById('dmg-prod-id').value;
+            const qty = parseInt(document.getElementById('dmg-qty').value) || 0;
+            const reason = document.getElementById('dmg-reason').value;
+            const note = document.getElementById('dmg-note').value.trim();
+
+            const p = db.products.find(prod => prod.id === prodId);
+            if (!p) return;
+
+            p.stock = Math.max(0, p.stock - qty);
+
+            const damageEntry = {
+                id: 'DMG-' + Math.floor(1000 + Math.random() * 9000),
+                date: new Date().toISOString().replace('T', ' ').substring(0, 16),
+                productId: p.id,
+                productName: p.name,
+                qty: qty,
+                reason: reason,
+                reportedBy: currentUser.name,
+                userId: currentUser.id,
+                note: note || 'None'
+            };
+
+            db.damages.unshift(damageEntry);
+            logActivity(currentUser.name, currentUser.id, `Reported ${qty} damaged units of ${p.name} (${reason})`);
+            saveDatabase();
+            closeModal();
+            showToast('Damage entry logged successfully.', 'success');
+            renderTabContent();
+        }
+
+        function openRecordBottleReturnModal() {
+            showModal('Record Empty Bottle Return', `
+                <form onsubmit="saveRecordBottleReturn(event)" class="space-y-4">
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-600 mb-1">Customer Name</label>
+                        <input type="text" id="br-cust-name" required placeholder="e.g. Apex Hotel" class="w-full px-3 py-2 border rounded-xl text-xs focus:ring-2 focus:ring-brand-500 outline-none">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-600 mb-1">Bottle Type / Packaging</label>
+                        <input type="text" id="br-type" required placeholder="e.g. 75cl Glass Bottles / 18.9L Jars" class="w-full px-3 py-2 border rounded-xl text-xs focus:ring-2 focus:ring-brand-500 outline-none">
+                    </div>
+                    <div class="grid grid-cols-2 gap-3">
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-600 mb-1">Quantity Returned</label>
+                            <input type="number" id="br-qty" min="1" required placeholder="e.g. 10" class="w-full px-3 py-2 border rounded-xl text-xs focus:ring-2 focus:ring-brand-500 outline-none">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-600 mb-1">Deposit Refunded (₦)</label>
+                            <input type="number" id="br-refund" min="0" value="0" class="w-full px-3 py-2 border rounded-xl text-xs focus:ring-2 focus:ring-brand-500 outline-none">
+                        </div>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-600 mb-1">Notes</label>
+                        <input type="text" id="br-note" placeholder="Optional notes" class="w-full px-3 py-2 border rounded-xl text-xs focus:ring-2 focus:ring-brand-500 outline-none">
+                    </div>
+                    <div class="flex justify-end gap-2 pt-2 border-t">
+                        <button type="button" onclick="closeModal()" class="px-4 py-2 border rounded-xl text-xs font-semibold text-slate-600 hover:bg-slate-100">Cancel</button>
+                        <button type="submit" class="px-4 py-2 bg-skyaccent-600 hover:bg-skyaccent-700 text-white rounded-xl text-xs font-semibold shadow">Record Return</button>
+                    </div>
+                </form>
+            `);
+        }
+
+        function saveRecordBottleReturn(e) {
+            e.preventDefault();
+            const custName = document.getElementById('br-cust-name').value.trim();
+            const type = document.getElementById('br-type').value.trim();
+            const qty = parseInt(document.getElementById('br-qty').value) || 0;
+            const refund = parseFloat(document.getElementById('br-refund').value) || 0;
+            const note = document.getElementById('br-note').value.trim();
+
+            if (!db.inventory) db.inventory = { mainStoreEmptyBottles: 0, bottleDepositsTotal: 0 };
+            db.inventory.mainStoreEmptyBottles = (db.inventory.mainStoreEmptyBottles || 0) + qty;
+            if (refund > 0) {
+                db.inventory.bottleDepositsTotal = Math.max(0, (db.inventory.bottleDepositsTotal || 0) - refund);
+            }
+
+            const returnEntry = {
+                id: 'BTR-' + Math.floor(1000 + Math.random() * 9000),
+                date: new Date().toISOString().replace('T', ' ').substring(0, 16),
+                customerName: custName,
+                productType: type,
+                qty: qty,
+                depositRefunded: refund,
+                receiver: currentUser.name,
+                userId: currentUser.id,
+                note: note || 'None'
+            };
+
+            db.emptyBottleReturns.unshift(returnEntry);
+            logActivity(currentUser.name, currentUser.id, `Recorded return of ${qty} empty bottles from ${custName}`);
+            saveDatabase();
+            closeModal();
+            showToast('Bottle return recorded successfully!', 'success');
+            renderTabContent();
+        }
+
+        function openCreateDispatchModal() {
+            const drivers = db.users.filter(u => u.role === 'driver' && u.status === 'active');
+            showModal('Create Driver Dispatch Order', `
+                <form onsubmit="saveCreateDispatch(event)" class="space-y-4">
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-600 mb-1">Select Driver</label>
+                        <select id="dsp-driver-id" required class="w-full px-3 py-2 border rounded-xl text-xs focus:ring-2 focus:ring-brand-500 outline-none bg-white">
+                            ${drivers.map(d => `<option value="${d.id}">${d.name} (${d.email})</option>`).join('')}
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-600 mb-1">Select Product to Load</label>
+                        <select id="dsp-prod-id" required class="w-full px-3 py-2 border rounded-xl text-xs focus:ring-2 focus:ring-brand-500 outline-none bg-white">
+                            ${db.products.map(p => `<option value="${p.id}">${p.name} (${p.stock} available)</option>`).join('')}
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-600 mb-1">Quantity Dispatched</label>
+                        <input type="number" id="dsp-qty" min="1" required placeholder="e.g. 50" class="w-full px-3 py-2 border rounded-xl text-xs focus:ring-2 focus:ring-brand-500 outline-none">
+                    </div>
+                    <div class="flex justify-end gap-2 pt-2 border-t">
+                        <button type="button" onclick="closeModal()" class="px-4 py-2 border rounded-xl text-xs font-semibold text-slate-600 hover:bg-slate-100">Cancel</button>
+                        <button type="submit" class="px-4 py-2 bg-brand-600 hover:bg-brand-700 text-white rounded-xl text-xs font-semibold shadow">Dispatch Vehicle</button>
+                    </div>
+                </form>
+            `);
+        }
+
+        function saveCreateDispatch(e) {
+            e.preventDefault();
+            const driverId = document.getElementById('dsp-driver-id').value;
+            const prodId = document.getElementById('dsp-prod-id').value;
+            const qty = parseInt(document.getElementById('dsp-qty').value) || 0;
+
+            const driverObj = db.users.find(u => u.id === driverId);
+            const prodObj = db.products.find(p => p.id === prodId);
+
+            if (!driverObj || !prodObj) return;
+
+            if (qty > prodObj.stock) {
+                showToast(`Cannot dispatch more than current stock (${prodObj.stock}).`, 'error');
+                return;
+            }
+
+            prodObj.stock -= qty;
+
+            const dispatchOrder = {
+                id: 'DSP-' + Math.floor(1000 + Math.random() * 9000),
+                date: new Date().toISOString().replace('T', ' ').substring(0, 16),
+                driver: driverObj.name,
+                userId: driverObj.id,
+                items: [{ productId: prodObj.id, name: prodObj.name, qty: qty }],
+                status: 'In Transit',
+                bottlesCollected: 0,
+                bottlesReturnedToStore: 0,
+                bottlesWithDriver: qty,
+                shortage: 0
+            };
+
+            db.dispatches.unshift(dispatchOrder);
+            logActivity(currentUser.name, currentUser.id, `Created dispatch ${dispatchOrder.id} for driver ${driverObj.name} with ${qty} units of ${prodObj.name}`);
+            saveDatabase();
+            closeModal();
+            showToast('Dispatch created successfully.', 'success');
+            renderTabContent();
+        }
+
+        function openDriverReturnModal(dispatchId) {
+            const d = db.dispatches.find(dsp => dsp.id === dispatchId);
+            if (!d) return;
+
+            showModal(`Driver Return Log: ${d.id}`, `
+                <form onsubmit="saveDriverReturn(event, '${d.id}')" class="space-y-4">
+                    <p class="text-xs text-slate-600">Assigned Driver: <span class="font-bold text-slate-900">${d.driver}</span></p>
+                    <div class="grid grid-cols-2 gap-3">
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-600 mb-1">Empty Shells Collected</label>
+                            <input type="number" id="ret-collected" min="0" value="${d.bottlesCollected || 0}" class="w-full px-3 py-2 border rounded-xl text-xs focus:ring-2 focus:ring-brand-500 outline-none">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-600 mb-1">Empty Shells Returned to Store</label>
+                            <input type="number" id="ret-store" min="0" value="${d.bottlesReturnedToStore || 0}" class="w-full px-3 py-2 border rounded-xl text-xs focus:ring-2 focus:ring-brand-500 outline-none">
+                        </div>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-600 mb-1">Shortage / Unaccounted Units</label>
+                        <input type="number" id="ret-shortage" min="0" value="${d.shortage || 0}" class="w-full px-3 py-2 border rounded-xl text-xs focus:ring-2 focus:ring-brand-500 outline-none">
+                    </div>
+                    <div class="flex justify-end gap-2 pt-2 border-t">
+                        <button type="button" onclick="closeModal()" class="px-4 py-2 border rounded-xl text-xs font-semibold text-slate-600 hover:bg-slate-100">Cancel</button>
+                        <button type="submit" class="px-4 py-2 bg-skyaccent-600 hover:bg-skyaccent-700 text-white rounded-xl text-xs font-semibold shadow">Complete Dispatch</button>
+                    </div>
+                </form>
+            `);
+        }
+
+        function saveDriverReturn(e, dispatchId) {
+            e.preventDefault();
+            const d = db.dispatches.find(dsp => dsp.id === dispatchId);
+            if (!d) return;
+
+            const collected = parseInt(document.getElementById('ret-collected').value) || 0;
+            const returnedStore = parseInt(document.getElementById('ret-store').value) || 0;
+            const shortage = parseInt(document.getElementById('ret-shortage').value) || 0;
+
+            d.bottlesCollected = collected;
+            d.bottlesReturnedToStore = returnedStore;
+            d.shortage = shortage;
+            d.bottlesWithDriver = 0;
+            d.status = 'Completed / Returned';
+
+            if (!db.inventory) db.inventory = { mainStoreEmptyBottles: 0, bottleDepositsTotal: 0 };
+            db.inventory.mainStoreEmptyBottles = (db.inventory.mainStoreEmptyBottles || 0) + returnedStore;
+
+            logActivity(currentUser.name, currentUser.id, `Completed dispatch ${d.id}. Returned ${returnedStore} shells to store.`);
+            saveDatabase();
+            closeModal();
+            showToast('Dispatch marked as completed!', 'success');
+            renderTabContent();
+        }
+
+        function openAddCustomerModal() {
+            showModal('Add Customer Profile', `
+                <form onsubmit="saveAddCustomer(event)" class="space-y-4">
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-600 mb-1">Customer Full / Business Name</label>
+                        <input type="text" id="cust-name" required placeholder="e.g. Apex Hotel & Suites" class="w-full px-3 py-2 border rounded-xl text-xs focus:ring-2 focus:ring-brand-500 outline-none">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-600 mb-1">Phone Number</label>
+                        <input type="text" id="cust-phone" required placeholder="e.g. 08031234567" class="w-full px-3 py-2 border rounded-xl text-xs focus:ring-2 focus:ring-brand-500 outline-none">
+                    </div>
+                    <div class="flex justify-end gap-2 pt-2 border-t">
+                        <button type="button" onclick="closeModal()" class="px-4 py-2 border rounded-xl text-xs font-semibold text-slate-600 hover:bg-slate-100">Cancel</button>
+                        <button type="submit" class="px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white rounded-xl text-xs font-semibold shadow">Save Customer</button>
+                    </div>
+                </form>
+            `);
+        }
+
+        function saveAddCustomer(e) {
+            e.preventDefault();
+            const name = document.getElementById('cust-name').value.trim();
+            const phone = document.getElementById('cust-phone').value.trim();
+
+            const newCust = {
+                id: 'CUST-' + Math.floor(100 + Math.random() * 900),
+                name: name,
+                phone: phone,
+                outstanding: 0,
+                emptyBottlesHeld: 0
+            };
+
+            db.customers.push(newCust);
+            logActivity(currentUser.name, currentUser.id, `Created customer account for ${name} (${phone})`);
+            saveDatabase();
+            closeModal();
+            showToast('Customer account created.', 'success');
+            renderTabContent();
+        }
+
+        function openEditCustomerModal(custId) {
+            const c = db.customers.find(cust => cust.id === custId);
+            if (!c) return;
+
+            showModal(`Edit Customer: ${c.name}`, `
+                <form onsubmit="saveEditCustomer(event, '${c.id}')" class="space-y-4">
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-600 mb-1">Customer Name</label>
+                        <input type="text" id="edit-cust-name" value="${c.name}" required class="w-full px-3 py-2 border rounded-xl text-xs focus:ring-2 focus:ring-brand-500 outline-none">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-600 mb-1">Phone Number</label>
+                        <input type="text" id="edit-cust-phone" value="${c.phone || ''}" required class="w-full px-3 py-2 border rounded-xl text-xs focus:ring-2 focus:ring-brand-500 outline-none">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-600 mb-1">Outstanding Debt (₦)</label>
+                        <input type="number" id="edit-cust-outstanding" value="${c.outstanding || 0}" min="0" step="0.01" class="w-full px-3 py-2 border rounded-xl text-xs focus:ring-2 focus:ring-brand-500 outline-none">
+                    </div>
+                    <div class="flex justify-end gap-2 pt-2 border-t">
+                        <button type="button" onclick="closeModal()" class="px-4 py-2 border rounded-xl text-xs font-semibold text-slate-600 hover:bg-slate-100">Cancel</button>
+                        <button type="submit" class="px-4 py-2 bg-brand-600 hover:bg-brand-700 text-white rounded-xl text-xs font-semibold shadow">Save Changes</button>
+                    </div>
+                </form>
+            `);
+        }
+
+        function saveEditCustomer(e, custId) {
+            e.preventDefault();
+            const c = db.customers.find(cust => cust.id === custId);
+            if (!c) return;
+
+            c.name = document.getElementById('edit-cust-name').value.trim();
+            c.phone = document.getElementById('edit-cust-phone').value.trim();
+            c.outstanding = parseFloat(document.getElementById('edit-cust-outstanding').value) || 0;
+
+            logActivity(currentUser.name, currentUser.id, `Updated customer account for ${c.name}`);
+            saveDatabase();
+            closeModal();
+            showToast('Customer profile updated.', 'success');
+            renderTabContent();
+        }
+
+        function openSettleCreditModal(custId) {
+            const c = db.customers.find(cust => cust.id === custId);
+            if (!c) return;
+
+            showModal(`Settle Credit Payment: ${c.name}`, `
+                <form onsubmit="saveSettleCredit(event, '${c.id}')" class="space-y-4">
+                    <p class="text-xs text-slate-600">Current Outstanding Debt: <span class="font-bold text-red-600">₦${c.outstanding.toLocaleString()}</span></p>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-600 mb-1">Amount Paid (₦)</label>
+                        <input type="number" id="settle-amount" min="1" max="${c.outstanding}" required placeholder="e.g. 5000" class="w-full px-3 py-2 border rounded-xl text-xs focus:ring-2 focus:ring-brand-500 outline-none">
+                    </div>
+                    <div class="flex justify-end gap-2 pt-2 border-t">
+                        <button type="button" onclick="closeModal()" class="px-4 py-2 border rounded-xl text-xs font-semibold text-slate-600 hover:bg-slate-100">Cancel</button>
+                        <button type="submit" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-semibold shadow">Record Payment</button>
+                    </div>
+                </form>
+            `);
+        }
+
+        function saveSettleCredit(e, custId) {
+            e.preventDefault();
+            const c = db.customers.find(cust => cust.id === custId);
+            if (!c) return;
+
+            const amount = parseFloat(document.getElementById('settle-amount').value) || 0;
+            c.outstanding = Math.max(0, c.outstanding - amount);
+
+            logActivity(currentUser.name, currentUser.id, `Settled ₦${amount.toLocaleString()} debt payment for ${c.name}. Remaining debt: ₦${c.outstanding.toLocaleString()}`);
+            saveDatabase();
+            closeModal();
+            showToast(`Recorded ₦${amount.toLocaleString()} debt repayment!`, 'success');
+            renderTabContent();
+        }
+
+        function openAddExpenseModal() {
+            showModal('Add Expense Entry', `
+                <form onsubmit="saveAddExpense(event)" class="space-y-4">
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-600 mb-1">Expense Category</label>
+                        <select id="exp-category" required class="w-full px-3 py-2 border rounded-xl text-xs focus:ring-2 focus:ring-brand-500 outline-none bg-white">
+                            <option value="Fuel / Energy">Fuel / Energy (Generator/Diesel)</option>
+                            <option value="Vehicle Maintenance">Vehicle Maintenance & Repairs</option>
+                            <option value="Raw Materials / Chemicals">Raw Materials / Water Chemicals</option>
+                            <option value="Factory Utilities">Factory Utilities & Power Bills</option>
+                            <option value="Staff Allowances">Staff Stipends / Allowances</option>
+                            <option value="Miscellaneous">Miscellaneous Operating Costs</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-600 mb-1">Description / Purpose</label>
+                        <input type="text" id="exp-desc" required placeholder="e.g. Factory Generator Diesel" class="w-full px-3 py-2 border rounded-xl text-xs focus:ring-2 focus:ring-brand-500 outline-none">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-600 mb-1">Amount Spent (₦)</label>
+                        <input type="number" id="exp-amount" min="1" step="0.01" required placeholder="e.g. 25000" class="w-full px-3 py-2 border rounded-xl text-xs focus:ring-2 focus:ring-brand-500 outline-none">
+                    </div>
+                    <div class="flex justify-end gap-2 pt-2 border-t">
+                        <button type="button" onclick="closeModal()" class="px-4 py-2 border rounded-xl text-xs font-semibold text-slate-600 hover:bg-slate-100">Cancel</button>
+                        <button type="submit" class="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-xl text-xs font-semibold shadow">Save Expense</button>
+                    </div>
+                </form>
+            `);
+        }
+
+        function saveAddExpense(e) {
+            e.preventDefault();
+            const category = document.getElementById('exp-category').value;
+            const desc = document.getElementById('exp-desc').value.trim();
+            const amount = parseFloat(document.getElementById('exp-amount').value) || 0;
+
+            const expObj = {
+                id: 'EXP-' + Math.floor(100 + Math.random() * 900),
+                date: new Date().toISOString().replace('T', ' ').substring(0, 16),
+                category: category,
+                description: desc,
+                amount: amount,
+                recordedBy: currentUser.name,
+                userId: currentUser.id
+            };
+
+            db.expenses.unshift(expObj);
+            logActivity(currentUser.name, currentUser.id, `Added expense ${expObj.id}: ${desc} - ₦${amount.toLocaleString()}`);
+            saveDatabase();
+            closeModal();
+            showToast('Expense entry saved.', 'success');
+            renderTabContent();
+        }
+
+        function openEditExpenseModal(expId) {
+            const exp = db.expenses.find(e => e.id === expId);
+            if (!exp) return;
+
+            showModal(`Edit Expense Entry: ${exp.id}`, `
+                <form onsubmit="saveEditExpense(event, '${exp.id}')" class="space-y-4">
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-600 mb-1">Category</label>
+                        <input type="text" id="edit-exp-cat" value="${exp.category}" required class="w-full px-3 py-2 border rounded-xl text-xs focus:ring-2 focus:ring-brand-500 outline-none">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-600 mb-1">Description</label>
+                        <input type="text" id="edit-exp-desc" value="${exp.description}" required class="w-full px-3 py-2 border rounded-xl text-xs focus:ring-2 focus:ring-brand-500 outline-none">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-600 mb-1">Amount (₦)</label>
+                        <input type="number" id="edit-exp-amount" value="${exp.amount}" min="1" step="0.01" required class="w-full px-3 py-2 border rounded-xl text-xs focus:ring-2 focus:ring-brand-500 outline-none">
+                    </div>
+                    <div class="flex justify-end gap-2 pt-2 border-t">
+                        <button type="button" onclick="closeModal()" class="px-4 py-2 border rounded-xl text-xs font-semibold text-slate-600 hover:bg-slate-100">Cancel</button>
+                        <button type="submit" class="px-4 py-2 bg-brand-600 hover:bg-brand-700 text-white rounded-xl text-xs font-semibold shadow">Save Changes</button>
+                    </div>
+                </form>
+            `);
+        }
+
+        function saveEditExpense(e, expId) {
+            e.preventDefault();
+            const exp = db.expenses.find(entry => entry.id === expId);
+            if (!exp) return;
+
+            exp.category = document.getElementById('edit-exp-cat').value.trim();
+            exp.description = document.getElementById('edit-exp-desc').value.trim();
+            exp.amount = parseFloat(document.getElementById('edit-exp-amount').value) || 0;
+
+            logActivity(currentUser.name, currentUser.id, `Updated expense entry ${exp.id}`);
+            saveDatabase();
+            closeModal();
+            showToast('Expense record updated.', 'success');
+            renderTabContent();
+        }
+
+        function openDeleteExpenseModal(expId) {
+            showModal('Confirm Expense Deletion', `
+                <div class="space-y-4">
+                    <p class="text-xs text-slate-600">Are you sure you want to delete expense record <span class="font-bold text-slate-900">${expId}</span>?</p>
+                    <div class="flex justify-end gap-2 pt-2 border-t">
+                        <button type="button" onclick="closeModal()" class="px-4 py-2 border rounded-xl text-xs font-semibold text-slate-600 hover:bg-slate-100">Cancel</button>
+                        <button type="button" onclick="confirmDeleteExpense('${expId}')" class="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-xl text-xs font-semibold shadow">Delete Entry</button>
+                    </div>
+                </div>
+            `);
+        }
+
+        function confirmDeleteExpense(expId) {
+            db.expenses = db.expenses.filter(e => e.id !== expId);
+            logActivity(currentUser.name, currentUser.id, `Deleted expense entry ${expId}`);
+            saveDatabase();
+            closeModal();
+            showToast('Expense entry deleted.', 'success');
+            renderTabContent();
+        }
+
+        function openEditSaleModal(saleId) {
+            const s = db.sales.find(sale => sale.id === saleId);
+            if (!s) return;
+
+            showModal(`Edit Sale Record: ${s.id}`, `
+                <form onsubmit="saveEditSale(event, '${s.id}')" class="space-y-4">
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-600 mb-1">Customer Name</label>
+                        <input type="text" id="edit-sale-cust" value="${s.customer}" required class="w-full px-3 py-2 border rounded-xl text-xs focus:ring-2 focus:ring-brand-500 outline-none">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-600 mb-1">Customer Phone</label>
+                        <input type="text" id="edit-sale-phone" value="${s.phone || ''}" class="w-full px-3 py-2 border rounded-xl text-xs focus:ring-2 focus:ring-brand-500 outline-none">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-600 mb-1">Payment Status</label>
+                        <select id="edit-sale-status" required class="w-full px-3 py-2 border rounded-xl text-xs focus:ring-2 focus:ring-brand-500 outline-none bg-white">
+                            <option value="Paid" ${s.status === 'Paid' ? 'selected' : ''}>Paid</option>
+                            <option value="Unpaid / Credit" ${s.status.includes('Credit') ? 'selected' : ''}>Unpaid / Credit</option>
+                        </select>
+                    </div>
+                    <div class="flex justify-end gap-2 pt-2 border-t">
+                        <button type="button" onclick="closeModal()" class="px-4 py-2 border rounded-xl text-xs font-semibold text-slate-600 hover:bg-slate-100">Cancel</button>
+                        <button type="submit" class="px-4 py-2 bg-brand-600 hover:bg-brand-700 text-white rounded-xl text-xs font-semibold shadow">Save Changes</button>
+                    </div>
+                </form>
+            `);
+        }
+
+        function saveEditSale(e, saleId) {
+            e.preventDefault();
+            const s = db.sales.find(sale => sale.id === saleId);
+            if (!s) return;
+
+            s.customer = document.getElementById('edit-sale-cust').value.trim();
+            s.phone = document.getElementById('edit-sale-phone').value.trim();
+            s.status = document.getElementById('edit-sale-status').value;
+
+            logActivity(currentUser.name, currentUser.id, `Updated sale record ${s.id} for ${s.customer}`);
+            saveDatabase();
+            closeModal();
+            showToast('Sale record updated.', 'success');
+            renderTabContent();
+        }
+
+        function openDeleteSaleModal(saleId) {
+            showModal('Confirm Sale Deletion', `
+                <div class="space-y-4">
+                    <p class="text-xs text-slate-600">Are you sure you want to delete transaction record <span class="font-bold text-slate-900">${saleId}</span>?</p>
+                    <div class="flex justify-end gap-2 pt-2 border-t">
+                        <button type="button" onclick="closeModal()" class="px-4 py-2 border rounded-xl text-xs font-semibold text-slate-600 hover:bg-slate-100">Cancel</button>
+                        <button type="button" onclick="confirmDeleteSale('${saleId}')" class="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-xl text-xs font-semibold shadow">Delete Transaction</button>
+                    </div>
+                </div>
+            `);
+        }
+
+        function confirmDeleteSale(saleId) {
+            db.sales = db.sales.filter(s => s.id !== saleId);
+            logActivity(currentUser.name, currentUser.id, `Deleted transaction record ${saleId}`);
+            saveDatabase();
+            closeModal();
+            showToast('Sale transaction deleted.', 'success');
+            renderTabContent();
+        }
+
+        function openAddUserModal() {
+            showModal('Add Staff Account', `
+                <form onsubmit="saveAddUser(event)" class="space-y-4">
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-600 mb-1">Full Name</label>
+                        <input type="text" id="add-user-name" required placeholder="e.g. Grace Staff" class="w-full px-3 py-2 border rounded-xl text-xs focus:ring-2 focus:ring-brand-500 outline-none">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-600 mb-1">Email Address</label>
+                        <input type="email" id="add-user-email" required placeholder="e.g. staff2@jethro.com" class="w-full px-3 py-2 border rounded-xl text-xs focus:ring-2 focus:ring-brand-500 outline-none">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-600 mb-1">Role</label>
+                        <select id="add-user-role" required class="w-full px-3 py-2 border rounded-xl text-xs focus:ring-2 focus:ring-brand-500 outline-none bg-white">
+                            <option value="staff">Staff / Cashier</option>
+                            <option value="driver">Driver</option>
+                            <option value="manager">Manager / Admin</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-600 mb-1">Password</label>
+                        <input type="password" id="add-user-pass" required placeholder="••••••••" class="w-full px-3 py-2 border rounded-xl text-xs focus:ring-2 focus:ring-brand-500 outline-none">
+                    </div>
+                    <div class="flex justify-end gap-2 pt-2 border-t">
+                        <button type="button" onclick="closeModal()" class="px-4 py-2 border rounded-xl text-xs font-semibold text-slate-600 hover:bg-slate-100">Cancel</button>
+                        <button type="submit" class="px-4 py-2 bg-brand-600 hover:bg-brand-700 text-white rounded-xl text-xs font-semibold shadow">Create Account</button>
+                    </div>
+                </form>
+            `);
+        }
+
+        function saveAddUser(e) {
+            e.preventDefault();
+            const name = document.getElementById('add-user-name').value.trim();
+            const email = document.getElementById('add-user-email').value.trim();
+            const role = document.getElementById('add-user-role').value;
+            const pass = document.getElementById('add-user-pass').value;
+
+            const prefix = role === 'manager' ? 'MGR' : role === 'driver' ? 'DRV' : 'STF';
+            const newUser = {
+                id: prefix + '-' + Math.floor(100 + Math.random() * 900),
+                name: name,
+                email: email,
+                password: pass,
+                role: role,
+                status: 'active',
+                createdAt: new Date().toISOString().slice(0, 10)
+            };
+
+            db.users.push(newUser);
+            logActivity(currentUser.name, currentUser.id, `Created ${role.toUpperCase()} user account for ${name} (${newUser.id})`);
+            saveDatabase();
+            closeModal();
+            showToast('User account created.', 'success');
+            renderTabContent();
+        }
+
+        function openEditUserModal(userId) {
+            const u = db.users.find(usr => usr.id === userId);
+            if (!u) return;
+
+            showModal(`Edit User Account: ${u.name}`, `
+                <form onsubmit="saveEditUser(event, '${u.id}')" class="space-y-4">
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-600 mb-1">Full Name</label>
+                        <input type="text" id="edit-user-name" value="${u.name}" required class="w-full px-3 py-2 border rounded-xl text-xs focus:ring-2 focus:ring-brand-500 outline-none">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-600 mb-1">Email</label>
+                        <input type="email" id="edit-user-email" value="${u.email}" required class="w-full px-3 py-2 border rounded-xl text-xs focus:ring-2 focus:ring-brand-500 outline-none">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-600 mb-1">Role</label>
+                        <select id="edit-user-role" required class="w-full px-3 py-2 border rounded-xl text-xs focus:ring-2 focus:ring-brand-500 outline-none bg-white">
+                            <option value="staff" ${u.role === 'staff' ? 'selected' : ''}>Staff / Cashier</option>
+                            <option value="driver" ${u.role === 'driver' ? 'selected' : ''}>Driver</option>
+                            <option value="manager" ${u.role === 'manager' ? 'selected' : ''}>Manager / Admin</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-600 mb-1">Account Status</label>
+                        <select id="edit-user-status" required class="w-full px-3 py-2 border rounded-xl text-xs focus:ring-2 focus:ring-brand-500 outline-none bg-white">
+                            <option value="active" ${u.status === 'active' ? 'selected' : ''}>Active</option>
+                            <option value="inactive" ${u.status === 'inactive' ? 'selected' : ''}>Deactivated</option>
+                        </select>
+                    </div>
+                    <div class="flex justify-end gap-2 pt-2 border-t">
+                        <button type="button" onclick="closeModal()" class="px-4 py-2 border rounded-xl text-xs font-semibold text-slate-600 hover:bg-slate-100">Cancel</button>
+                        <button type="submit" class="px-4 py-2 bg-brand-600 hover:bg-brand-700 text-white rounded-xl text-xs font-semibold shadow">Save Changes</button>
+                    </div>
+                </form>
+            `);
+        }
+
+        function saveEditUser(e, userId) {
+            e.preventDefault();
+            const u = db.users.find(usr => usr.id === userId);
+            if (!u) return;
+
+            u.name = document.getElementById('edit-user-name').value.trim();
+            u.email = document.getElementById('edit-user-email').value.trim();
+            u.role = document.getElementById('edit-user-role').value;
+            u.status = document.getElementById('edit-user-status').value;
+
+            logActivity(currentUser.name, currentUser.id, `Updated user account ${u.id} (${u.name})`);
+            saveDatabase();
+            closeModal();
+            showToast('User account updated.', 'success');
+            renderTabContent();
+        }
+
+        function openProfileModal() {
+            if (!currentUser) return;
+            document.getElementById('profile-modal-name').textContent = currentUser.name;
+            document.getElementById('profile-modal-email').textContent = currentUser.email;
+            document.getElementById('profile-modal-role').textContent = currentUser.role.toUpperCase();
+            document.getElementById('profile-modal-id').textContent = `ID: ${currentUser.id}`;
+            document.getElementById('profile-display-name').value = currentUser.name;
+
+            document.getElementById('current-password').value = '';
+            document.getElementById('new-password').value = '';
+            document.getElementById('confirm-password').value = '';
+            document.getElementById('profile-name-feedback').classList.add('hidden');
+            document.getElementById('password-feedback').classList.add('hidden');
+
+            document.getElementById('profile-modal').classList.remove('hidden');
+        }
+
+        function closeProfileModal() {
+            document.getElementById('profile-modal').classList.add('hidden');
+        }
+
+        function handleNameChange(e) {
+            e.preventDefault();
+            const newName = document.getElementById('profile-display-name').value.trim();
+            const feedback = document.getElementById('profile-name-feedback');
+
+            if (!newName) return;
+
+            const oldName = currentUser.name;
+            currentUser.name = newName;
+
+            const dbUser = db.users.find(u => u.id === currentUser.id);
+            if (dbUser) dbUser.name = newName;
+
+            logActivity(newName, currentUser.id, `Changed display name from "${oldName}" to "${newName}"`);
+            saveDatabase();
+            updateUIUserReferences();
+
+            feedback.textContent = 'Display name updated successfully!';
+            feedback.className = 'text-xs font-semibold p-2.5 rounded-lg bg-emerald-50 text-emerald-700 border border-emerald-200';
+            feedback.classList.remove('hidden');
+
+            setTimeout(() => feedback.classList.add('hidden'), 3000);
+        }
+
+        function handlePasswordChange(e) {
+            e.preventDefault();
+            const curPass = document.getElementById('current-password').value;
+            const newPass = document.getElementById('new-password').value;
+            const confPass = document.getElementById('confirm-password').value;
+            const feedback = document.getElementById('password-feedback');
+
+            if (curPass !== currentUser.password) {
+                feedback.textContent = 'Current password is incorrect.';
+                feedback.className = 'text-xs font-semibold p-2.5 rounded-lg bg-red-50 text-red-700 border border-red-200';
+                feedback.classList.remove('hidden');
+                return;
+            }
+
+            if (newPass.length < 4) {
+                feedback.textContent = 'New password must be at least 4 characters long.';
+                feedback.className = 'text-xs font-semibold p-2.5 rounded-lg bg-red-50 text-red-700 border border-red-200';
+                feedback.classList.remove('hidden');
+                return;
+            }
+
+            if (newPass !== confPass) {
+                feedback.textContent = 'New password and confirmation do not match.';
+                feedback.className = 'text-xs font-semibold p-2.5 rounded-lg bg-red-50 text-red-700 border border-red-200';
+                feedback.classList.remove('hidden');
+                return;
+            }
+
+            currentUser.password = newPass;
+            const dbUser = db.users.find(u => u.id === currentUser.id);
+            if (dbUser) dbUser.password = newPass;
+
+            logActivity(currentUser.name, currentUser.id, 'Changed account password');
+            saveDatabase();
+
+            feedback.textContent = 'Password updated successfully!';
+            feedback.className = 'text-xs font-semibold p-2.5 rounded-lg bg-emerald-50 text-emerald-700 border border-emerald-200';
+            feedback.classList.remove('hidden');
+
+            document.getElementById('current-password').value = '';
+            document.getElementById('new-password').value = '';
+            document.getElementById('confirm-password').value = '';
+
+            setTimeout(() => feedback.classList.add('hidden'), 3000);
+        }
+
+        function showModal(title, bodyHtml) {
+            document.getElementById('modal-title').textContent = title;
+            document.getElementById('modal-body').innerHTML = bodyHtml;
+            document.getElementById('generic-modal').classList.remove('hidden');
+        }
+
+        function closeModal() {
+            document.getElementById('generic-modal').classList.add('hidden');
+        }
+
+        window.onload = async function() {
+            await loadDatabase();
+            if (currentUser) startLivePresence('Online');
+        };
+    </script>
+</body>
+</html>

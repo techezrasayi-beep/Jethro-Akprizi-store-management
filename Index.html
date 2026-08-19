@@ -121,6 +121,9 @@
                     <!-- Dynamically populated via JS -->
                 </nav>
 
+                <!-- Live notifications / activity feed for every logged-in user -->
+                <div id="sidebar-notifications" class="px-3 pb-3"></div>
+
                 <div class="p-4 border-t border-slate-800 bg-slate-950/50 flex items-center justify-between">
                     <div class="flex items-center gap-2.5 truncate">
                         <div class="w-8 h-8 rounded-full bg-brand-700 text-white flex items-center justify-center font-bold text-xs flex-shrink-0 shadow" id="user-avatar-initials">M</div>
@@ -245,6 +248,8 @@
         let livePresenceChannelStatus = 'CONNECTING';
         let livePresenceWriteInFlight = false;
         let lastLiveAction = 'Online';
+        let liveNotificationSeen = new Set();
+        let liveNotificationReady = false;
 
         let defaultDB = {
             users: [
@@ -303,19 +308,28 @@
             normalizeDatabase();
 
             // Supabase is the shared source of truth when configured.
+            // Do not replace the existing account list with an empty shared row.
             if (supabaseClient) {
                 try {
-                    const { data, error } = await supabaseClient.from('jethro_app_state').select('data').eq('id', 'main').maybeSingle();
+                    const { data, error } = await supabaseClient
+                        .from('jethro_app_state')
+                        .select('data')
+                        .eq('id', 'main')
+                        .maybeSingle();
+
                     if (error) throw error;
-                    if (data && data.data && Array.isArray(data.data.users)) {
+
+                    if (data && data.data && Array.isArray(data.data.users) && data.data.users.length > 0) {
                         db = data.data;
                         normalizeDatabase();
                         localStorage.setItem(DB_KEY, JSON.stringify(db));
                     } else {
+                        normalizeDatabase();
                         await syncDatabaseToSupabase();
                     }
                 } catch (e) {
                     console.warn('Supabase load failed; using local cache:', e);
+                    normalizeDatabase();
                 }
             }
 
@@ -413,13 +427,31 @@
                             if (updated) currentUser = updated;
                         }
 
+                        renderSidebarNotifications();
                         renderTabContent();
                     }
                 )
                 .on(
                     'postgres_changes',
                     { event: '*', schema: 'public', table: 'jethro_live_presence' },
-                    () => {
+                    payload => {
+                        if (payload.eventType === 'INSERT' && payload.new && currentUser) {
+                            const p = payload.new;
+                            const notificationId = `${p.session_id || ''}:${p.last_seen || ''}:${p.current_action || ''}`;
+
+                            if (liveNotificationReady &&
+                                p.user_id !== currentUser.id &&
+                                String(p.current_action || '').toLowerCase().includes('logged in')) {
+                                if (!liveNotificationSeen.has(notificationId)) {
+                                    liveNotificationSeen.add(notificationId);
+                                    showToast(
+                                        `${p.user_name || 'User'} logged in as ${String(p.role || '').toUpperCase()}`,
+                                        'success'
+                                    );
+                                }
+                            }
+                        }
+
                         if (currentUser?.role === 'manager') refreshLiveTeamActivity();
                     }
                 )
@@ -429,7 +461,9 @@
                     // Realtime is an acceleration mechanism, not the only
                     // source of truth. The polling fallback remains active.
                     if (status === 'SUBSCRIBED' && currentUser) {
+                        liveNotificationReady = false;
                         await startLivePresence(lastLiveAction);
+                        liveNotificationReady = true;
                         if (currentUser.role === 'manager') {
                             await refreshLiveTeamActivity();
                         }
@@ -537,10 +571,10 @@
             const cutoff = new Date(Date.now() - 40000).toISOString();
 
             try {
-                const statusBadge = document.getElementById('live-team-status');
-                if (statusBadge) {
-                    statusBadge.textContent = 'CONNECTING';
-                    statusBadge.className = 'text-[9px] font-bold text-amber-600 bg-amber-50 px-2 py-1 rounded-full';
+                const statusBadgeConnecting = document.getElementById('live-team-status');
+                if (statusBadgeConnecting) {
+                    statusBadgeConnecting.textContent = 'CONNECTING';
+                    statusBadgeConnecting.className = 'text-[9px] font-bold text-amber-600 bg-amber-50 px-2 py-1 rounded-full';
                 }
 
                 const { data, error } = await supabaseClient
@@ -746,6 +780,7 @@ function exportDatabaseJSON() {
                 action: actionDesc
             });
             saveDatabase();
+            renderSidebarNotifications();
             if (currentUser && currentUser.id === userId) startLivePresence(actionDesc);
         }
 
@@ -766,9 +801,16 @@ function exportDatabaseJSON() {
             const passVal = document.getElementById('login-password').value;
             const errDiv = document.getElementById('login-error');
 
-            const foundUser = db.users.find(u => 
-                (u.email.toLowerCase() === inputVal.toLowerCase() || u.id.toLowerCase() === inputVal.toLowerCase() || u.name.toLowerCase() === inputVal.toLowerCase()) 
-                && u.password === passVal
+            // Any person using the same published app link can log in with
+            // an account that exists in the shared Supabase-backed user list.
+            // The role is NOT selected on the login screen; it comes from the
+            // user's account record created/managed by the manager.
+            const foundUser = db.users.find(u =>
+                u &&
+                (String(u.email || '').toLowerCase() === inputVal.toLowerCase() ||
+                 String(u.id || '').toLowerCase() === inputVal.toLowerCase() ||
+                 String(u.name || '').toLowerCase() === inputVal.toLowerCase()) &&
+                String(u.password || '') === passVal
             );
 
             if (!foundUser) {
@@ -784,11 +826,12 @@ function exportDatabaseJSON() {
             }
 
             currentUser = foundUser;
-            saveDatabase();
-            startLivePresence('Logged in');
             errDiv.classList.add('hidden');
 
             logActivity(currentUser.name, currentUser.id, `User logged in as ${currentUser.role.toUpperCase()}`);
+
+            saveDatabase();
+            startLivePresence('Logged in');
 
             document.getElementById('login-view').classList.add('hidden');
             document.getElementById('main-app').classList.remove('hidden');
@@ -836,6 +879,63 @@ function exportDatabaseJSON() {
             backdrop.classList.toggle('hidden');
         }
 
+        function escapeActivityText(value) {
+            return String(value ?? '')
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#039;');
+        }
+
+        function renderSidebarNotifications() {
+            const box = document.getElementById('sidebar-notifications');
+            if (!box || !currentUser) return;
+
+            const logs = Array.isArray(db.auditLogs) ? db.auditLogs.slice(0, 8) : [];
+            const recent = logs.slice(0, 5);
+            const unreadCount = Math.min(
+                9,
+                logs.filter(log => log.userId !== currentUser.id).length
+            );
+
+            box.innerHTML = `
+                <div class="rounded-xl border border-slate-700 bg-slate-900/80 overflow-hidden">
+                    <button onclick="toggleSidebarNotifications()" class="w-full flex items-center justify-between px-3 py-2.5 text-left hover:bg-slate-800 transition">
+                        <span class="flex items-center gap-2 text-[11px] font-bold text-white">
+                            <i class="fa-solid fa-bell text-amber-400"></i>
+                            Notifications & Activity
+                        </span>
+                        ${unreadCount ? `<span class="min-w-5 h-5 px-1.5 rounded-full bg-red-500 text-white text-[9px] font-black flex items-center justify-center">${unreadCount}</span>` : `<span class="text-[9px] text-slate-500">LIVE</span>`}
+                    </button>
+
+                    <div id="sidebar-notification-list" class="hidden border-t border-slate-700 max-h-64 overflow-y-auto">
+                        ${recent.length ? recent.map(log => `
+                            <div class="px-3 py-2.5 border-b border-slate-800 last:border-b-0">
+                                <div class="flex items-start gap-2">
+                                    <span class="mt-0.5 text-[9px] ${String(log.action || '').toLowerCase().includes('logged in') ? 'text-emerald-400' : 'text-sky-400'}">
+                                        <i class="fa-solid ${String(log.action || '').toLowerCase().includes('logged in') ? 'fa-right-to-bracket' : 'fa-circle-info'}"></i>
+                                    </span>
+                                    <div class="min-w-0">
+                                        <p class="text-[10px] leading-4 text-slate-200 break-words">
+                                            <span class="font-bold">${escapeActivityText(log.user)}</span>
+                                            ${escapeActivityText(log.action)}
+                                        </p>
+                                        <p class="text-[8px] text-slate-500 mt-0.5">${escapeActivityText(log.date)}</p>
+                                    </div>
+                                </div>
+                            </div>
+                        `).join('') : `<p class="p-3 text-[10px] text-slate-500">No activity yet.</p>`}
+                    </div>
+                </div>
+            `;
+        }
+
+        function toggleSidebarNotifications() {
+            const list = document.getElementById('sidebar-notification-list');
+            if (list) list.classList.toggle('hidden');
+        }
+
         function renderSidebarNav() {
             const nav = document.getElementById('sidebar-nav');
             let html = '';
@@ -867,6 +967,7 @@ function exportDatabaseJSON() {
             });
 
             nav.innerHTML = html;
+            renderSidebarNotifications();
         }
 
         function switchTab(tabId) {
@@ -876,7 +977,9 @@ function exportDatabaseJSON() {
             }
 
             activeTab = tabId;
-            startLivePresence('Viewing ' + tabId.replace(/_/g, ' '));
+            const readableTab = tabId.replace(/_/g, ' ');
+            startLivePresence('Viewing ' + readableTab);
+            logActivity(currentUser.name, currentUser.id, 'Opened ' + readableTab);
             renderSidebarNav();
             renderTabContent();
         }
@@ -1316,6 +1419,28 @@ function exportDatabaseJSON() {
             renderCart();
         }
 
+        function setCartQty(productId, value) {
+            const item = cart.find(i => String(i.productId) === String(productId));
+            if (!item) return;
+
+            let qty = Math.floor(Number(value));
+            if (!Number.isFinite(qty) || qty < 1) {
+                showToast('Quantity must be at least 1.', 'error');
+                renderCart();
+                return;
+            }
+
+            const prod = db.products.find(p => String(p.id) === String(productId));
+            if (!item.manual && prod && qty > Number(prod.stock || 0)) {
+                showToast('Exceeds available stock quantity.', 'error');
+                renderCart();
+                return;
+            }
+
+            item.qty = qty;
+            renderCart();
+        }
+
         function updateCartQty(productId, delta) {
             const item = cart.find(i => i.productId === productId);
             if (!item) return;
@@ -1405,9 +1530,17 @@ function exportDatabaseJSON() {
                         </div>
                         <div class="flex items-center gap-2 flex-shrink-0">
                             <div class="flex items-center border rounded bg-white">
-                                <button onclick="updateCartQty('${item.productId}', -1)" class="px-2 py-0.5 text-slate-600 hover:bg-slate-100">-</button>
-                                <span class="px-2 font-bold text-xs">${item.qty}</span>
-                                <button onclick="updateCartQty('${item.productId}', 1)" class="px-2 py-0.5 text-slate-600 hover:bg-slate-100">+</button>
+                                <button type="button" onclick="updateCartQty('${item.productId}', -1)" class="px-2 py-0.5 text-slate-600 hover:bg-slate-100">-</button>
+                                <input type="number"
+                                       min="1"
+                                       step="1"
+                                       value="${item.qty}"
+                                       aria-label="Quantity for ${item.name}"
+                                       onchange="setCartQty('${item.productId}', this.value)"
+                                       onkeydown="if(event.key === 'Enter'){ this.blur(); }"
+                                       class="w-12 px-1 py-0.5 text-center font-bold text-xs border-0 outline-none bg-white"
+                                       inputmode="numeric">
+                                <button type="button" onclick="updateCartQty('${item.productId}', 1)" class="px-2 py-0.5 text-slate-600 hover:bg-slate-100">+</button>
                             </div>
                             <span class="font-bold text-slate-900 w-16 text-right">₦${sub.toLocaleString()}</span>
                         </div>
